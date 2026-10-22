@@ -1,0 +1,272 @@
+{
+  "synthetic": true,
+  "date": "2026-10-22",
+  "events": [
+    {
+      "seq": 1,
+      "at": "07:00",
+      "type": "day_start",
+      "source": "PMS + housekeeping + events feed",
+      "summary": "Day opens. PMS pre-assigned SYN-Claire Laurent to 402 (high floor, street side). A traveller-side AI agent pushes 'prefers high floors' for her (its own inference).",
+      "detail": {
+        "proposed_claim": {
+          "guest_id": "G001",
+          "statement": "Prefers a high floor",
+          "key": "high_floor",
+          "origin": "inferred",
+          "source": "traveller-side AI agent (its own inference)"
+        }
+      },
+      "expect": {
+        "G001": {
+          "recommend_room": "206",
+          "ready_by": "11:50",
+          "must_cite": [
+            "C001",
+            "X-EVT-1"
+          ],
+          "write_refused": "high_floor"
+        },
+        "G007": {
+          "watch": true,
+          "must_cite": [
+            "C070",
+            "X-EVT-1"
+          ],
+          "no_option_yet": true,
+          "expired_and_deleted": "C071"
+        },
+        "why": "402 faces the street and a concert runs there tonight; she asked twice for quiet. 206 is courtyard with a desk and ready at 11:50, before her 15:00 ETA. The agent's 'high floor' guess is refused at the door: she never said it."
+      }
+    },
+    {
+      "seq": 2,
+      "at": "08:15",
+      "type": "express_check_out",
+      "source": "PMS webhook",
+      "detail": {
+        "room": "206",
+        "leaving_at": "09:30"
+      },
+      "summary": "Guest in 206 checks out online, leaving at 09:30 instead of 11:00.",
+      "expect": {
+        "G001": {
+          "no_change": true
+        }
+      }
+    },
+    {
+      "seq": 3,
+      "at": "08:40",
+      "type": "guest_message",
+      "source": "WhatsApp (guest, FR)",
+      "detail": {
+        "from_contact": "+33 6 00 00 00 01 (SYN)",
+        "write_claim": {
+          "claim_id": "C005",
+          "guest_id": "G001",
+          "key": "eta",
+          "value": "11:15",
+          "statement": "Arriving around 11:15 on the 9:04 TGV (TGV 6612)",
+          "train": "TGV 6612",
+          "source": "WhatsApp, this stay",
+          "purpose": "arrival coordination",
+          "layer": "working"
+        }
+      },
+      "summary": "SYN-Claire Laurent: 'je prends le TGV de 9h04, je serai là vers 11h15'.",
+      "expect": {
+        "G001": {
+          "recommend_room": "206",
+          "keep_current": true,
+          "prioritise_cleaning": "206",
+          "ready_by": "10:30",
+          "static_ready_by": "11:50",
+          "must_cite": [
+            "C005",
+            "C003"
+          ],
+          "must_not_cite": [
+            "X-EVT-1"
+          ],
+          "claim_written": "C005"
+        },
+        "why": "Same room, cleaned first: 206 empties at 09:30. In the normal queue it would be ready at 11:50 (35 min wait); moved to the front it is ready at 10:30. Last time she waited 2h and asked us not to repeat it."
+      }
+    },
+    {
+      "seq": 4,
+      "at": "10:05",
+      "type": "early_check_out",
+      "source": "PMS webhook",
+      "detail": {
+        "room": "305",
+        "left_at": "10:05"
+      },
+      "summary": "Guest in 305 checks out early.",
+      "expect": {
+        "G001": {
+          "no_change": true
+        }
+      }
+    },
+    {
+      "seq": 5,
+      "at": "10:20",
+      "type": "out_of_service",
+      "source": "housekeeping app message + maintenance ticket",
+      "detail": {
+        "room": "206",
+        "back_in_service": "16:00"
+      },
+      "summary": "Housekeeping reports a leak in 206; maintenance ticket: plumber 15:00, back in service 16:00.",
+      "expect": {
+        "G001": {
+          "recommend_room": "305",
+          "ready_by": "11:10",
+          "prioritise_cleaning": "305",
+          "no_alternative": true,
+          "must_cite": [
+            "C001",
+            "C002"
+          ]
+        },
+        "why": "305 freed at 10:05. The attendant who just finished 206 takes it next instead of 203: ready 11:10, before she arrives. No wait, so no lesser room is offered."
+      }
+    },
+    {
+      "seq": 6,
+      "at": "11:05",
+      "type": "arrival_imminent",
+      "source": "rail status API",
+      "detail": {
+        "train": "TGV 6612",
+        "arrived": "10:52"
+      },
+      "summary": "Her declared train arrived 10:52. Brief the front desk.",
+      "expect": {
+        "G001": {
+          "rail_used_because": "C005",
+          "brief_max_sentences": 2,
+          "brief_must_mention": [
+            "third stay",
+            "305",
+            "desk"
+          ],
+          "brief_must_not_mention": [
+            "high floor",
+            "concert",
+            "waited"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 7,
+      "at": "11:15",
+      "type": "check_in",
+      "source": "PMS + front desk",
+      "guest_id": "G001",
+      "detail": {
+        "confirm_claim": "C001",
+        "said": "Oh, the courtyard side, perfect, thank you."
+      },
+      "summary": "SYN-Claire Laurent arrives and confirms she likes the quiet courtyard side.",
+      "expect": {
+        "G001": {
+          "wait_minutes": 0,
+          "confirmed": "C001",
+          "confirmations": 3,
+          "last_confirmed": "2026-10-22"
+        },
+        "why": "Memory gets stronger when the guest confirms it: the 36-month clock restarts today."
+      }
+    },
+    {
+      "seq": 8,
+      "at": "14:00",
+      "type": "consent_withdrawn",
+      "source": "guest app",
+      "detail": {
+        "guest_id": "G008"
+      },
+      "summary": "SYN-Hugo Martin withdraws his consent in the app.",
+      "expect": {
+        "G008": {
+          "claims_deleted": true
+        }
+      }
+    },
+    {
+      "seq": 9,
+      "at": "16:00",
+      "type": "back_in_service",
+      "source": "maintenance ticket",
+      "detail": {
+        "room": "206"
+      },
+      "summary": "Plumber done: 206 back in service, needs a quick re-clean.",
+      "expect": {
+        "G007": {
+          "suggest_room": "206",
+          "ready_by": "16:40",
+          "before": "20:00",
+          "needs_human_validation": true,
+          "must_cite": [
+            "C070",
+            "X-EVT-1"
+          ],
+          "no_claim_created_from_context": true
+        },
+        "why": "The room with the leak becomes the answer for the guest under the concert."
+      }
+    },
+    {
+      "seq": 10,
+      "at": "16:20",
+      "type": "guest_reply",
+      "source": "guest app (FR)",
+      "detail": {
+        "guest_id": "G007",
+        "write_claim": {
+          "claim_id": "C072",
+          "guest_id": "G007",
+          "key": "quiet_room",
+          "value": false,
+          "statement": "No need to move tonight: he is going to the concert, back around 1am",
+          "source": "guest app, this stay",
+          "purpose": "stay personalisation",
+          "layer": "working",
+          "scope": "this stay"
+        }
+      },
+      "summary": "SYN-Malik Benali declines the move: 'pas la peine, je vais au concert, je rentre vers 1h'.",
+      "expect": {
+        "G007": {
+          "suggestion_withdrawn": true,
+          "hold_released": "206",
+          "durable_kept": "C070",
+          "reconfirm_next_stay": "C070",
+          "stay_claim_written": "C072"
+        },
+        "why": "The newest thing he said wins for tonight. It does not erase what he asked for twice: next stay, the front desk simply checks."
+      }
+    },
+    {
+      "seq": 11,
+      "at": "17:00",
+      "type": "arrivals",
+      "source": "PMS",
+      "summary": "SYN-Hugo Martin (3 past stays, consent withdrawn) and SYN-Tom Reyes (first stay, no consent) arrive.",
+      "expect": {
+        "G008": {
+          "cites_nothing": true,
+          "would_have_cited_before_withdrawal": "C080"
+        },
+        "G012": {
+          "cites_nothing": true
+        }
+      }
+    }
+  ]
+}

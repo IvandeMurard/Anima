@@ -1,0 +1,238 @@
+{
+  "synthetic": true,
+  "name": "Maison Lumen (fictional)",
+  "city": "Paris 11e",
+  "rooms_total": 24,
+  "standard_check_in": "15:00",
+  "standard_check_out": "11:00",
+  "housekeeping": {
+    "attendants_on_departures": 2,
+    "available_from": "08:00",
+    "note": "Stayover service is done by a third attendant and is not modelled.",
+    "minutes_departure_clean": 40,
+    "minutes_reclean_after_maintenance": 30,
+    "minutes_inspection": 10
+  },
+  "category_rank": {
+    "standard": 1,
+    "superior": 2
+  },
+  "rooms": [
+    {
+      "room": "101",
+      "floor": 1,
+      "side": "street",
+      "lift_adjacent": false,
+      "category": "standard",
+      "desk": false,
+      "accessible": false
+    },
+    {
+      "room": "102",
+      "floor": 1,
+      "side": "street",
+      "lift_adjacent": false,
+      "category": "superior",
+      "desk": true,
+      "accessible": false
+    },
+    {
+      "room": "103",
+      "floor": 1,
+      "side": "street",
+      "lift_adjacent": true,
+      "category": "standard",
+      "desk": false,
+      "accessible": false
+    },
+    {
+      "room": "104",
+      "floor": 1,
+      "side": "courtyard",
+      "lift_adjacent": true,
+      "category": "standard",
+      "desk": false,
+      "accessible": false
+    },
+    {
+      "room": "105",
+      "floor": 1,
+      "side": "courtyard",
+      "lift_adjacent": false,
+      "category": "superior",
+      "desk": true,
+      "accessible": false
+    },
+    {
+      "room": "106",
+      "floor": 1,
+      "side": "courtyard",
+      "lift_adjacent": false,
+      "category": "superior",
+      "desk": true,
+      "accessible": false
+    },
+    {
+      "room": "201",
+      "floor": 2,
+      "side": "street",
+      "lift_adjacent": false,
+      "category": "standard",
+      "desk": false,
+      "accessible": false
+    },
+    {
+      "room": "202",
+      "floor": 2,
+      "side": "street",
+      "lift_adjacent": false,
+      "category": "superior",
+      "desk": true,
+      "accessible": false
+    },
+    {
+      "room": "203",
+      "floor": 2,
+      "side": "street",
+      "lift_adjacent": true,
+      "category": "standard",
+      "desk": false,
+      "accessible": false
+    },
+    {
+      "room": "204",
+      "floor": 2,
+      "side": "courtyard",
+      "lift_adjacent": true,
+      "category": "standard",
+      "desk": false,
+      "accessible": false
+    },
+    {
+      "room": "205",
+      "floor": 2,
+      "side": "courtyard",
+      "lift_adjacent": false,
+      "category": "superior",
+      "desk": true,
+      "accessible": false
+    },
+    {
+      "room": "206",
+      "floor": 2,
+      "side": "courtyard",
+      "lift_adjacent": false,
+      "category": "superior",
+      "desk": true,
+      "accessible": false
+    },
+    {
+      "room": "301",
+      "floor": 3,
+      "side": "street",
+      "lift_adjacent": false,
+      "category": "standard",
+      "desk": false,
+      "accessible": false
+    },
+    {
+      "room": "302",
+      "floor": 3,
+      "side": "street",
+      "lift_adjacent": false,
+      "category": "superior",
+      "desk": true,
+      "accessible": false
+    },
+    {
+      "room": "303",
+      "floor": 3,
+      "side": "street",
+      "lift_adjacent": true,
+      "category": "standard",
+      "desk": false,
+      "accessible": false
+    },
+    {
+      "room": "304",
+      "floor": 3,
+      "side": "courtyard",
+      "lift_adjacent": true,
+      "category": "standard",
+      "desk": false,
+      "accessible": false
+    },
+    {
+      "room": "305",
+      "floor": 3,
+      "side": "courtyard",
+      "lift_adjacent": false,
+      "category": "superior",
+      "desk": true,
+      "accessible": false
+    },
+    {
+      "room": "306",
+      "floor": 3,
+      "side": "courtyard",
+      "lift_adjacent": false,
+      "category": "superior",
+      "desk": true,
+      "accessible": true
+    },
+    {
+      "room": "401",
+      "floor": 4,
+      "side": "street",
+      "lift_adjacent": false,
+      "category": "standard",
+      "desk": false,
+      "accessible": false
+    },
+    {
+      "room": "402",
+      "floor": 4,
+      "side": "street",
+      "lift_adjacent": false,
+      "category": "superior",
+      "desk": true,
+      "accessible": false
+    },
+    {
+      "room": "403",
+      "floor": 4,
+      "side": "street",
+      "lift_adjacent": true,
+      "category": "standard",
+      "desk": false,
+      "accessible": false
+    },
+    {
+      "room": "404",
+      "floor": 4,
+      "side": "courtyard",
+      "lift_adjacent": true,
+      "category": "standard",
+      "desk": false,
+      "accessible": false
+    },
+    {
+      "room": "405",
+      "floor": 4,
+      "side": "courtyard",
+      "lift_adjacent": false,
+      "category": "superior",
+      "desk": true,
+      "accessible": false
+    },
+    {
+      "room": "406",
+      "floor": 4,
+      "side": "courtyard",
+      "lift_adjacent": false,
+      "category": "superior",
+      "desk": true,
+      "accessible": false
+    }
+  ]
+}

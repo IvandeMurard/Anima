@@ -1,0 +1,26 @@
+{
+  "synthetic": true,
+  "sources": [
+    {
+      "id": "X-EVT-1",
+      "kind": "local_event",
+      "source": "city events feed (simulated)",
+      "summary": "Live concert at Le Volta (fictional venue), 40 m away, street side",
+      "window": [
+        "2026-10-22T20:00:00+02:00",
+        "2026-10-22T23:30:00+02:00"
+      ],
+      "affects": {
+        "side": "street",
+        "noise": "high"
+      }
+    },
+    {
+      "id": "X-TR-1",
+      "kind": "transport",
+      "source": "rail status API (simulated)",
+      "summary": "TGV 6612 Lyon-Paris",
+      "used_only_if": "a guest declared this train for arrival coordination"
+    }
+  ]
+}

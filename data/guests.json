@@ -1,0 +1,346 @@
+[
+  {
+    "guest_id": "G001",
+    "name": "SYN-Claire Laurent",
+    "stays_before": 2,
+    "contact": "+33 6 00 00 00 01 (SYN)",
+    "consent": {
+      "purposes": [
+        {
+          "name": "stay personalisation",
+          "given": "2025-03-14",
+          "via": "front desk tablet"
+        },
+        {
+          "name": "arrival coordination",
+          "given": "2026-10-19",
+          "via": "pre-arrival form"
+        }
+      ],
+      "decoupled_from_booking": true
+    },
+    "claims": [
+      {
+        "claim_id": "C001",
+        "statement": "Asks for a quiet room, away from the street",
+        "key": "quiet_room",
+        "value": true,
+        "origin": "declared",
+        "source": "front desk note, stay 1; pre-arrival form, stay 2",
+        "purpose": "stay personalisation",
+        "first_seen": "2025-03-14",
+        "last_confirmed": "2025-11-06",
+        "confirmations": 2,
+        "layer": "semantic",
+        "retention": "36 months rolling from last_confirmed"
+      },
+      {
+        "claim_id": "C002",
+        "statement": "Works on arrival this stay: needs a desk",
+        "key": "needs_desk",
+        "value": true,
+        "origin": "declared",
+        "source": "pre-arrival form, this stay",
+        "purpose": "stay personalisation",
+        "first_seen": "2026-10-19",
+        "last_confirmed": "2026-10-19",
+        "confirmations": 1,
+        "layer": "working",
+        "retention": "until check-out"
+      },
+      {
+        "claim_id": "C003",
+        "statement": "Told us at check-out that she waited 2h for her room, and asked us to have it ready if she comes early again",
+        "key": "ready_if_early",
+        "value": true,
+        "origin": "declared",
+        "source": "check-out feedback, stay 2 (a service failure on our side)",
+        "purpose": "stay personalisation",
+        "first_seen": "2025-11-08",
+        "last_confirmed": "2025-11-08",
+        "confirmations": 1,
+        "layer": "semantic",
+        "retention": "36 months rolling from last_confirmed"
+      }
+    ],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G002",
+    "name": "SYN-Guest G002",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G003",
+    "name": "SYN-Guest G003",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G004",
+    "name": "SYN-Guest G004",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G005",
+    "name": "SYN-Guest G005",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G006",
+    "name": "SYN-Guest G006",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G007",
+    "name": "SYN-Malik Benali",
+    "stays_before": 4,
+    "consent": {
+      "purposes": [
+        {
+          "name": "stay personalisation",
+          "given": "2022-05-02",
+          "via": "guest app"
+        }
+      ],
+      "decoupled_from_booking": true
+    },
+    "claims": [
+      {
+        "claim_id": "C070",
+        "statement": "Asks for a quiet room (asked to move once because of street noise)",
+        "key": "quiet_room",
+        "value": true,
+        "origin": "declared",
+        "source": "guest message, stay 3",
+        "purpose": "stay personalisation",
+        "first_seen": "2025-09-20",
+        "last_confirmed": "2026-04-11",
+        "confirmations": 2,
+        "layer": "semantic",
+        "retention": "36 months rolling from last_confirmed"
+      },
+      {
+        "claim_id": "C071",
+        "statement": "Asks for a late check-out",
+        "key": "late_check_out",
+        "value": true,
+        "origin": "declared",
+        "source": "front desk note, stay 1",
+        "purpose": "stay personalisation",
+        "first_seen": "2023-05-20",
+        "last_confirmed": "2023-05-20",
+        "confirmations": 1,
+        "layer": "semantic",
+        "retention": "36 months rolling from last_confirmed"
+      }
+    ],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G008",
+    "name": "SYN-Hugo Martin",
+    "stays_before": 3,
+    "consent": {
+      "purposes": [
+        {
+          "name": "stay personalisation",
+          "given": "2025-01-10",
+          "via": "pre-arrival form"
+        }
+      ],
+      "decoupled_from_booking": true
+    },
+    "claims": [
+      {
+        "claim_id": "C080",
+        "statement": "Asks for two extra pillows",
+        "key": "extra_pillows",
+        "value": true,
+        "origin": "declared",
+        "source": "pre-arrival form, stay 2",
+        "purpose": "stay personalisation",
+        "first_seen": "2025-06-01",
+        "last_confirmed": "2026-02-15",
+        "confirmations": 2,
+        "layer": "semantic",
+        "retention": "36 months rolling from last_confirmed"
+      }
+    ],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G009",
+    "name": "SYN-Guest G009",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G010",
+    "name": "SYN-Guest G010",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G011",
+    "name": "SYN-Guest G011",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G012",
+    "name": "SYN-Tom Reyes",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G013",
+    "name": "SYN-Guest G013",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G014",
+    "name": "SYN-Guest G014",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G015",
+    "name": "SYN-Guest G015",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G016",
+    "name": "SYN-Guest G016",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G017",
+    "name": "SYN-Guest G017",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G018",
+    "name": "SYN-Guest G018",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G019",
+    "name": "SYN-Guest G019",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G020",
+    "name": "SYN-Guest G020",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G021",
+    "name": "SYN-Guest G021",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G022",
+    "name": "SYN-Guest G022",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G023",
+    "name": "SYN-Guest G023",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G024",
+    "name": "SYN-Guest G024",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G025",
+    "name": "SYN-Guest G025",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G026",
+    "name": "SYN-Guest G026",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G027",
+    "name": "SYN-Guest G027",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  },
+  {
+    "guest_id": "G028",
+    "name": "SYN-Guest G028",
+    "stays_before": 0,
+    "consent": null,
+    "claims": [],
+    "synthetic": true
+  }
+]

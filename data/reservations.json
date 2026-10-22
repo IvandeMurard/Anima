@@ -1,0 +1,165 @@
+{
+  "synthetic": true,
+  "date": "2026-10-22",
+  "arrivals": [
+    {
+      "res_id": "R-G001",
+      "guest_id": "G001",
+      "category": "superior",
+      "nights": 2,
+      "eta": "15:00",
+      "pms_preassigned_room": "402",
+      "pms_rule": "highest available floor in booked category"
+    },
+    {
+      "res_id": "R-G004",
+      "guest_id": "G004",
+      "category": "superior",
+      "nights": 3,
+      "eta": "10:30",
+      "assigned_room": "306",
+      "locked": true,
+      "lock_reason": "booking constraint (kept in the PMS; Anima does not need the reason)"
+    },
+    {
+      "res_id": "R-G008",
+      "guest_id": "G008",
+      "category": "standard",
+      "nights": 1,
+      "eta": "17:00"
+    },
+    {
+      "res_id": "R-G012",
+      "guest_id": "G012",
+      "category": "standard",
+      "nights": 1,
+      "eta": "17:30"
+    },
+    {
+      "res_id": "R-G013",
+      "guest_id": "G013",
+      "category": "standard",
+      "nights": 1,
+      "eta": "14:00"
+    },
+    {
+      "res_id": "R-G014",
+      "guest_id": "G014",
+      "category": "standard",
+      "nights": 1,
+      "eta": "15:00"
+    },
+    {
+      "res_id": "R-G015",
+      "guest_id": "G015",
+      "category": "standard",
+      "nights": 1,
+      "eta": "15:30"
+    },
+    {
+      "res_id": "R-G016",
+      "guest_id": "G016",
+      "category": "standard",
+      "nights": 1,
+      "eta": "16:00"
+    },
+    {
+      "res_id": "R-G027",
+      "guest_id": "G027",
+      "category": "standard",
+      "nights": 1,
+      "eta": "16:30"
+    },
+    {
+      "res_id": "R-G028",
+      "guest_id": "G028",
+      "category": "standard",
+      "nights": 1,
+      "eta": "18:00"
+    }
+  ],
+  "departures": [
+    {
+      "guest_id": "G020",
+      "room": "101",
+      "planned_check_out": "09:00"
+    },
+    {
+      "guest_id": "G021",
+      "room": "103",
+      "planned_check_out": "09:15"
+    },
+    {
+      "guest_id": "G022",
+      "room": "201",
+      "planned_check_out": "09:30"
+    },
+    {
+      "guest_id": "G023",
+      "room": "203",
+      "planned_check_out": "09:45"
+    },
+    {
+      "guest_id": "G024",
+      "room": "301",
+      "planned_check_out": "09:45"
+    },
+    {
+      "guest_id": "G025",
+      "room": "404",
+      "planned_check_out": "10:00"
+    },
+    {
+      "guest_id": "G003",
+      "room": "206",
+      "planned_check_out": "11:00"
+    },
+    {
+      "guest_id": "G002",
+      "room": "305",
+      "planned_check_out": "11:00"
+    }
+  ],
+  "stayovers": [
+    {
+      "guest_id": "G010",
+      "room": "102"
+    },
+    {
+      "guest_id": "G011",
+      "room": "104"
+    },
+    {
+      "guest_id": "G005",
+      "room": "105"
+    },
+    {
+      "guest_id": "G006",
+      "room": "106"
+    },
+    {
+      "guest_id": "G009",
+      "room": "202"
+    },
+    {
+      "guest_id": "G017",
+      "room": "205"
+    },
+    {
+      "guest_id": "G007",
+      "room": "302"
+    },
+    {
+      "guest_id": "G018",
+      "room": "303"
+    },
+    {
+      "guest_id": "G019",
+      "room": "401"
+    },
+    {
+      "guest_id": "G026",
+      "room": "406"
+    }
+  ]
+}

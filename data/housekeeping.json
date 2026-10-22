@@ -1,0 +1,117 @@
+{
+  "synthetic": true,
+  "as_of": "2026-10-22T07:00:00+02:00",
+  "rooms": [
+    {
+      "room": "101",
+      "status": "occupied_due_out"
+    },
+    {
+      "room": "102",
+      "status": "occupied_stayover"
+    },
+    {
+      "room": "103",
+      "status": "occupied_due_out"
+    },
+    {
+      "room": "104",
+      "status": "occupied_stayover"
+    },
+    {
+      "room": "105",
+      "status": "occupied_stayover"
+    },
+    {
+      "room": "106",
+      "status": "occupied_stayover"
+    },
+    {
+      "room": "201",
+      "status": "occupied_due_out"
+    },
+    {
+      "room": "202",
+      "status": "occupied_stayover"
+    },
+    {
+      "room": "203",
+      "status": "occupied_due_out"
+    },
+    {
+      "room": "204",
+      "status": "vacant_clean"
+    },
+    {
+      "room": "205",
+      "status": "occupied_stayover"
+    },
+    {
+      "room": "206",
+      "status": "occupied_due_out"
+    },
+    {
+      "room": "301",
+      "status": "occupied_due_out"
+    },
+    {
+      "room": "302",
+      "status": "occupied_stayover"
+    },
+    {
+      "room": "303",
+      "status": "occupied_stayover"
+    },
+    {
+      "room": "304",
+      "status": "vacant_clean"
+    },
+    {
+      "room": "305",
+      "status": "occupied_due_out"
+    },
+    {
+      "room": "306",
+      "status": "vacant_clean"
+    },
+    {
+      "room": "401",
+      "status": "occupied_stayover"
+    },
+    {
+      "room": "402",
+      "status": "vacant_clean"
+    },
+    {
+      "room": "403",
+      "status": "vacant_clean"
+    },
+    {
+      "room": "404",
+      "status": "occupied_due_out"
+    },
+    {
+      "room": "405",
+      "status": "out_of_order"
+    },
+    {
+      "room": "406",
+      "status": "occupied_stayover"
+    }
+  ],
+  "default_queue": [
+    "101",
+    "103",
+    "201",
+    "203",
+    "301",
+    "404",
+    "206",
+    "305"
+  ],
+  "default_queue_rule": "by known departure time, then room number",
+  "notes": {
+    "405": "renovation until 2026-11-03 (out of order: off inventory)",
+    "306": "held for R-G004 (booking constraint)"
+  }
+}

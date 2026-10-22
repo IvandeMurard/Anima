@@ -1,0 +1,139 @@
+{
+  "synthetic": true,
+  "inputs": [
+    {
+      "seq": 2,
+      "channel": "PMS webhook",
+      "format": "json",
+      "payload": {
+        "event": "folio.express_checkout",
+        "room": "206",
+        "departure_time": "2026-10-22T09:30:00+02:00"
+      },
+      "target": {
+        "type": "express_check_out",
+        "room": "206",
+        "leaving_at": "09:30"
+      }
+    },
+    {
+      "seq": 3,
+      "channel": "WhatsApp (guest)",
+      "format": "text",
+      "lang": "fr",
+      "from": "+33 6 00 00 00 01 (SYN)",
+      "payload": "Bonjour ! Finalement je prends le TGV de 9h04, je serai là vers 11h15. Je dois bosser en arrivant, si jamais la chambre n'est pas prête un coin calme suffira :)",
+      "target": {
+        "type": "guest_message",
+        "resolved_guest_id": "G001",
+        "eta": "11:15",
+        "train_departure": "09:04",
+        "claims_to_write": [
+          "eta"
+        ],
+        "already_known": [
+          "needs_desk"
+        ],
+        "fallback_offered_by_guest": "quiet corner if room not ready"
+      }
+    },
+    {
+      "seq": 4,
+      "channel": "PMS webhook",
+      "format": "json",
+      "payload": {
+        "event": "reservation.checked_out",
+        "room": "305",
+        "at": "2026-10-22T10:05:00+02:00"
+      },
+      "target": {
+        "type": "early_check_out",
+        "room": "305",
+        "left_at": "10:05"
+      }
+    },
+    {
+      "seq": 5,
+      "channel": "housekeeping app (text message)",
+      "format": "text",
+      "lang": "fr",
+      "payload": "206 salle de bain finie mais le robinet fuit, ça coule par terre. SYN-Karim (maintenance) dit plombier vers 15h, je bloque la chambre",
+      "target": {
+        "type": "out_of_service",
+        "room": "206",
+        "reason": "leaking tap",
+        "back_in_service": null,
+        "note": "time unknown from this message alone"
+      }
+    },
+    {
+      "seq": 5,
+      "channel": "maintenance ticket",
+      "format": "json",
+      "payload": {
+        "ticket": "M-2210-04",
+        "room": "206",
+        "issue": "leak",
+        "plumber_eta": "15:00",
+        "expected_back_in_service": "16:00"
+      },
+      "target": {
+        "type": "out_of_service",
+        "room": "206",
+        "back_in_service": "16:00"
+      }
+    },
+    {
+      "seq": 6,
+      "channel": "rail status API (simulated)",
+      "format": "json",
+      "payload": {
+        "train": "TGV 6612",
+        "status": "arrived",
+        "station": "Paris Gare de Lyon",
+        "at": "10:52"
+      },
+      "target": {
+        "type": "arrival_imminent",
+        "train": "TGV 6612",
+        "arrived": "10:52"
+      }
+    },
+    {
+      "seq": 9,
+      "channel": "maintenance ticket",
+      "format": "json",
+      "payload": {
+        "ticket": "M-2210-04",
+        "room": "206",
+        "status": "resolved",
+        "at": "16:00"
+      },
+      "target": {
+        "type": "back_in_service",
+        "room": "206"
+      }
+    },
+    {
+      "seq": 10,
+      "channel": "guest app (text)",
+      "format": "text",
+      "lang": "fr",
+      "from": "SYN app user G007",
+      "payload": "Merci mais pas la peine de changer, je vais au concert ce soir, je rentre vers 1h",
+      "target": {
+        "type": "guest_reply",
+        "resolved_guest_id": "G007",
+        "declines_offer": "206",
+        "claims_to_write": [
+          {
+            "key": "quiet_room",
+            "value": false,
+            "layer": "working",
+            "scope": "this stay"
+          }
+        ]
+      }
+    }
+  ]
+}

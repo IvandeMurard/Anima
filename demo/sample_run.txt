@@ -1,0 +1,97 @@
+11 events on Valkey stream 'anima:events' · Postgres 16 · parser=golden
+
+07:00  Day opens. PMS pre-assigned SYN-Claire Laurent to 402 (high floor, street side). A traveller-side AI agent pushes 'prefers high floors' for her (its own inference).
+
+┃ Memory hygiene
+┃ 1 memory expired (36 months without confirmation) and deleted
+┃ 1 inferred attribute blocked (no guest attached)
+
+┃ Claire Laurent → room 206
+┃ ready 11:50 · wait 0 min · cleaned first: False
+┃ because: C001, C002, X-EVT-1
+┃ [ Validate ]  (human decides)
+
+┃ Malik Benali (302, street side)
+┃ concert tonight on his side · watching, no move before 15:00
+
+08:15  Guest in 206 checks out online, leaving at 09:30 instead of 11:00.
+  ← PMS webhook: {"event": "folio.express_checkout", "room": "206", "departure_time": "2026-10-22T09:30:00+02:00"}
+  no change: Claire stays in 206 (ready 11:50)
+
+08:40  SYN-Claire Laurent: 'je prends le TGV de 9h04, je serai là vers 11h15'.
+  ← WhatsApp (guest): Bonjour ! Finalement je prends le TGV de 9h04, je serai là vers 11h15. Je dois bosser en arrivant, si jamais l
+
+┃ Memory write
+┃ C005 'Arriving around 11:15 on the 9:04 TGV (TGV 6612)' → Valkey stay:R-G001:claims, TTL 60 h (until check-out)
+
+┃ Claire Laurent → room 206
+┃ ready 10:30 · wait 0 min · cleaned first: True
+┃ because: C001, C002, C003, C005
+┃ [ Validate ]  (human decides)
+
+10:05  Guest in 305 checks out early.
+  ← PMS webhook: {"event": "reservation.checked_out", "room": "305", "at": "2026-10-22T10:05:00+02:00"}
+  no change: Claire stays in 206 (ready 10:30)
+
+10:20  Housekeeping reports a leak in 206; maintenance ticket: plumber 15:00, back in service 16:00.
+  ← housekeeping app (text message): 206 salle de bain finie mais le robinet fuit, ça coule par terre. SYN-Karim (maintenance) dit plombier vers 15
+  ← maintenance ticket: {"ticket": "M-2210-04", "room": "206", "issue": "leak", "plumber_eta": "15:00", "expected_back_in_service": "1
+
+┃ Claire Laurent → room 305
+┃ ready 11:10 · wait 0 min · cleaned first: True
+┃ because: C001, C002, C003, C005
+┃ [ Validate ]  (human decides)
+
+11:05  Her declared train arrived 10:52. Brief the front desk.
+  ← rail status API (simulated): {"train": "TGV 6612", "status": "arrived", "station": "Paris Gare de Lyon", "at": "10:52"}
+  🔊 Brief: Claire Laurent, third stay, arrives in about 10 minutes: she asked for a quiet room and is in 305, courtyard side, ready at 11:10. She told us she works on arrival, so the desk is set up and there is nothing to ask her again.
+
+11:15  SYN-Claire Laurent arrives and confirms she likes the quiet courtyard side.
+
+┃ Check-in
+┃ Room 305 · wait 0 min · nothing asked twice
+┃ C001 confirmed (3×), now kept until 2029-10-22
+
+14:00  SYN-Hugo Martin withdraws his consent in the app.
+
+┃ Consent withdrawn
+┃ G008: consent rows deleted, claims left in Postgres: 0 (cascade)
+
+16:00  Plumber done: 206 back in service, needs a quick re-clean.
+  ← maintenance ticket: {"ticket": "M-2210-04", "room": "206", "status": "resolved", "at": "16:00"}
+
+┃ Malik Benali (302, street side)
+┃ suggest 206 ready 16:40 before the 20:00 concert · because: C070, X-EVT-1
+
+16:20  SYN-Malik Benali declines the move: 'pas la peine, je vais au concert, je rentre vers 1h'.
+  ← guest app (text): Merci mais pas la peine de changer, je vais au concert ce soir, je rentre vers 1h
+
+┃ Contradiction handled
+┃ C072 (this stay) wins tonight; durable C070 kept, flagged to reconfirm
+┃ offer withdrawn, 206 released
+
+17:00  SYN-Hugo Martin (3 past stays, consent withdrawn) and SYN-Tom Reyes (first stay, no consent) arrive.
+
+┃ SYN-Hugo Martin → room 201
+┃ memory used: none
+
+┃ SYN-Tom Reyes → room 203
+┃ memory used: none
+
+Before / after
+  memory but no re-planning: 206 out of service at the desk → 35 min wait
+  Anima: room 305 → 0 min
+
+Checks on Postgres + Valkey
+  PASS  stale C071 deleted by the SQL expiry sweep
+  PASS  C001 confirmed 3 times
+  PASS  C070 kept and flagged to reconfirm
+  PASS  G008's memory deleted by cascade on consent withdrawal
+  PASS  refusal log has no guest_id column
+  PASS  decisions logged
+  PASS  only declared claims stored
+  PASS  baseline matches the oracle (35 min, room out of service): got 35
+  PASS  Claire's this-stay memory expires by itself in 60 h (Valkey TTL)
+
+Recorded scenario (synthetic) · parser=golden · memory ops and decisions live on Postgres + Valkey
+ALL PASS
