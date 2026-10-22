@@ -1,22 +1,35 @@
-"""Anima web app on Aiven Runtime. T1a: walking skeleton.
+"""Anima web app on Aiven Runtime: one front-office page that replays the day live on the data layer.
 
-Proves the deploy pipeline before any screen is built: one page and one health endpoint that
-reach Aiven Postgres and Valkey through DATABASE_URL and VALKEY_URL (Runtime's default names
-for connected services). The demo replay (screens 1-4) plugs in here in T1b.
+Postgres and Valkey come from DATABASE_URL and VALKEY_URL (Runtime's default names for connected
+services). POST /api/replay runs demo/run_demo.py's run_day() in a thread; GET /api/stream sends its
+frames as server-sent events, from the start of the current run, so a refresh or a second screen
+sees the whole day.
 
 Usage:
   DATABASE_URL=postgresql://... VALKEY_URL=rediss://... uvicorn app.main:app --port 8080
 """
 from __future__ import annotations
 
+import asyncio
+import json
 import os
+import sys
+import threading
+import time
+from pathlib import Path
 
 import psycopg
 import valkey
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse, StreamingResponse
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "demo"))
+import run_demo  # noqa: E402  (demo/run_demo.py: the agent loop, shared with the CLI)
 
 app = FastAPI(title="Anima")
+RUN = {"id": 0, "frames": [], "running": False}     # one replay at a time: it resets the stores
+LOCK = threading.Lock()
 
 
 def check_postgres() -> dict:
@@ -55,33 +68,65 @@ def health():
     """Always 200 so the app itself counts as up; the body says whether each store is reachable."""
     pg, vk = check_postgres(), check_valkey()
     return {"app": "ok", "postgres": pg, "valkey": vk, "ready": pg["ok"] and vk["ok"],
-            "env_names": store_env_names()}
+            "env_names": store_env_names(), "llm_available": bool(os.environ.get("ANTHROPIC_API_KEY"))}
 
 
-PAGE = """<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Anima</title>
-<style>
-  body { font: 16px/1.5 system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; padding: 0 1rem; color: #1a1a1a; background: #fafaf7; }
-  h1 { margin-bottom: .25rem; } p.sub { color: #666; margin-top: 0; }
-  li { list-style: none; font-size: 1.25rem; margin: .5rem 0; }
-  .ok { color: #1a7f37; } .ko { color: #cf222e; }
-  small { color: #666; }
-</style></head>
-<body>
-  <h1>Anima</h1>
-  <p class="sub">Guest memory for hotel agents · synthetic data only · running on Aiven Runtime</p>
-  <ul id="stores"><li>Checking the data layer…</li></ul>
-  <small>Demo replay (screens 1-4) arrives in T1b.</small>
-<script>
-fetch("/api/health").then(r => r.json()).then(h => {
-  const row = (name, s) => `<li class="${s.ok ? "ok" : "ko"}">${name} ${s.ok ? "✓" : "✗"} <small>${s.ok ? (s.version ? "v" + s.version : "") : s.error}</small></li>`;
-  document.getElementById("stores").innerHTML = row("Postgres", h.postgres) + row("Valkey", h.valkey);
-}).catch(() => { document.getElementById("stores").innerHTML = '<li class="ko">Health check failed</li>'; });
-</script>
-</body></html>"""
+# ------------------------------------------------------------------ replay
+def replay(run_id: int, pace: float, parser: str):
+    def emit(frame):
+        with LOCK:
+            if RUN["id"] == run_id:
+                RUN["frames"].append({**frame, "run": run_id})
+    pg = vk = None
+    try:
+        run_demo.PARSER = parser
+        pg = psycopg.connect(os.environ["DATABASE_URL"])
+        vk = valkey.from_url(os.environ["VALKEY_URL"])
+        run_demo.run_day(pg, vk, emit, reset_stores=True, pace=pace)
+    except Exception as e:                       # the type only: messages can carry connection details
+        emit({"type": "error", "error": type(e).__name__})
+    finally:
+        if pg:
+            pg.close()
+        emit({"type": "done"})
+        with LOCK:
+            RUN["running"] = False
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.post("/api/replay")
+def start_replay(pace: float = 1.5, parser: str = "golden"):
+    if parser not in ("golden", "llm"):
+        raise HTTPException(400, "parser must be golden or llm")
+    if parser == "llm" and not os.environ.get("ANTHROPIC_API_KEY"):
+        raise HTTPException(400, "ANTHROPIC_API_KEY not set: the live parser is unavailable")
+    with LOCK:
+        if RUN["running"]:
+            raise HTTPException(409, "a replay is already running")
+        RUN["id"] += 1; RUN["frames"] = []; RUN["running"] = True
+        run_id = RUN["id"]
+    threading.Thread(target=replay, args=(run_id, max(0.0, min(pace, 5.0)), parser), daemon=True).start()
+    return {"run": run_id}
+
+
+@app.get("/api/stream")
+async def stream():
+    async def frames():
+        sent, run, last_ping = 0, None, time.monotonic()
+        while True:
+            with LOCK:
+                if RUN["id"] != run:
+                    run, sent = RUN["id"], 0
+                batch = RUN["frames"][sent:]
+            for f in batch:
+                yield f"data: {json.dumps(f, ensure_ascii=False, default=str)}\n\n"
+            sent += len(batch)
+            if time.monotonic() - last_ping > 15:
+                yield ": ping\n\n"; last_ping = time.monotonic()
+            await asyncio.sleep(0.2)
+    return StreamingResponse(frames(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@app.get("/")
 def index():
-    return PAGE
+    return FileResponse(ROOT / "app" / "static" / "index.html")

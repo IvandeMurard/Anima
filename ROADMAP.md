@@ -139,3 +139,8 @@ Pushing to GitHub does **not** redeploy: after every merge, click **Deploy lates
 | 10:25 | Hard deadline 14:30; T3 merged into T2, voice / withdraw button / screen 9 cut by default | Time | Ivan |
 | 10:25 | Main message: what hotel amnesia costs the hotel; guest comfort is the illustration | Pain felt as too weak when framed on the guest | Ivan |
 | 10:25 | Deploy a walking skeleton before building screens | Aiven Runtime is the riskiest unknown | Ivan |
+| 12:15 | Guest and staff messages in English (replaces "French on purpose") | Judges must read them instantly | Ivan |
+| 12:15 | Add a live "Try it" mode: the judge writes as the guest (simulated WhatsApp) or as housekeeping, and validates as the front desk; the scripted day stays as the guided tour | Judges must try it as users; not only a recording | Ivan |
+| 12:15 | Show a data ledger per recommendation: used, refused, forgotten, shared with which tool | "Data at the core" criterion | Ivan |
+| 12:15 | Anticipation shown as "ask, don't assume": suggestions from declared needs + context, never stored until the guest confirms | Anima anticipates without profiling | Ivan |
+| 12:15 | Cut: Lovable front, real WhatsApp, real connectors (pitched as next steps) | Time and risk; real WhatsApp would bring real personal data | Ivan |

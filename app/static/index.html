@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Anima · Front office</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --panel: #ffffff; --ink: #1c1b19; --muted: #6b6860; --line: #e4e1d8;
+    --accent: #2f5d50; --accent-soft: #e3eee9; --warn: #8a5a00; --warn-soft: #fbf1dc;
+    --bad: #a3271f; --bad-soft: #fbe7e5; --pg: #335c99; --pg-soft: #e5ecf7; --vk: #7a3e9d; --vk-soft: #f1e8f7;
+    --mono: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151514; --panel: #1f1f1d; --ink: #ecebe6; --muted: #a09d94; --line: #34332f;
+      --accent: #7fc4ac; --accent-soft: #1f3530; --warn: #e6b45a; --warn-soft: #3a2f1a;
+      --bad: #f08a80; --bad-soft: #3d2120; --pg: #8fb1e8; --pg-soft: #1f2a3d; --vk: #c99be6; --vk-soft: #2f2238;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: var(--bg); }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  .brand b { font-size: 18px; letter-spacing: .2px; } .brand span { color: var(--muted); margin-left: 8px; }
+  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .pill { display: inline-flex; gap: 6px; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 13px; border: 1px solid var(--line); }
+  .pill.ok { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
+  .pill.ko { color: var(--bad); background: var(--bad-soft); border-color: transparent; }
+  select, button { font: inherit; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+  button.primary { background: var(--accent); color: var(--panel); border-color: var(--accent); font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  .strip { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 8px 20px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .strip b { color: var(--ink); font-weight: 600; }
+  .banner { display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 20px; }
+  .banner .pill { background: var(--warn-soft); color: var(--warn); border-color: transparent; font-weight: 600; }
+  main { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(320px, 1.25fr) minmax(320px, 1.25fr); gap: 16px; padding: 4px 20px 20px; }
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+  #clock { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ev { padding: 10px 0; border-top: 1px solid var(--line); }
+  .ev:first-child { border-top: 0; }
+  .ev .t { font-weight: 700; font-variant-numeric: tabular-nums; margin-right: 8px; }
+  .ev.current { background: linear-gradient(90deg, var(--accent-soft), transparent); margin: 0 -16px; padding: 10px 16px; }
+  .raw { margin: 8px 0 0; padding: 8px 10px; border-left: 3px solid var(--line); background: var(--bg); border-radius: 0 8px 8px 0; font-size: 13px; }
+  .raw .ch { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+  .raw q { display: block; font-style: italic; margin-top: 2px; quotes: none; overflow-wrap: anywhere; }
+  .raw.json q { font-style: normal; font-family: var(--mono); font-size: 12px; }
+  details { margin-top: 4px; font-size: 12px; color: var(--muted); }
+  details pre { font-family: var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; margin: 4px 0 0; }
+  .now { border: 2px solid var(--accent); border-radius: 12px; padding: 16px; }
+  .now .who { color: var(--muted); font-size: 13px; }
+  .now .what { font-size: 22px; font-weight: 700; margin: 2px 0 8px; }
+  .facts { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .facts span { padding: 2px 9px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); font-size: 13px; }
+  .facts span.good { background: var(--accent-soft); color: var(--accent); border-color: transparent; font-weight: 600; }
+  .why { margin: 0 0 12px; padding: 0; list-style: none; }
+  .why li { margin: 4px 0; font-size: 14px; }
+  .cite { font-family: var(--mono); font-size: 12px; padding: 1px 6px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); margin-right: 6px; }
+  .cite.ctx { background: var(--warn-soft); color: var(--warn); }
+  .validate { display: flex; gap: 10px; align-items: center; }
+  .validate small { color: var(--muted); }
+  .muted { color: var(--muted); }
+  .feed { margin-top: 14px; }
+  .fc { padding: 8px 10px; border-left: 3px solid var(--line); margin: 8px 0; font-size: 13px; }
+  .fc.info { border-color: var(--warn); } .fc.plan { border-color: var(--accent); }
+  .fc b { font-size: 14px; } .fc .t { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .tabs button { padding: 4px 10px; font-size: 13px; cursor: pointer; }
+  .tabs button.on { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+  td { padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td .id { font-family: var(--mono); font-size: 11px; color: var(--muted); display: block; }
+  .store { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 5px; margin-top: 3px; }
+  .store.Postgres { background: var(--pg-soft); color: var(--pg); } .store.Valkey { background: var(--vk-soft); color: var(--vk); }
+  .flag { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 5px; background: var(--warn-soft); color: var(--warn); margin-top: 3px; }
+  tr.new td { animation: flash 2.5s ease-out; }
+  @keyframes flash { from { background: var(--accent-soft); } to { background: transparent; } }
+  .empty { color: var(--muted); font-style: italic; padding: 8px 0; }
+  .footnote { font-size: 12px; color: var(--muted); margin-top: 10px; }
+  #end { grid-column: 1 / -1; display: none; }
+  #end.show { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+  @media (max-width: 1000px) { #end.show { grid-template-columns: 1fr; } }
+  .ba td:first-child { color: var(--muted); }
+  .ba th:last-child, .ba td:last-child { background: var(--accent-soft); font-weight: 600; }
+  .check { font-size: 13px; margin: 3px 0; } .check .ok { color: var(--accent); font-weight: 700; } .check .ko { color: var(--bad); font-weight: 700; }
+  .allpass { font-size: 18px; font-weight: 700; color: var(--accent); margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><b>Anima</b><span>Maison Lumen · front office · 22 Oct</span></div>
+  <div class="controls">
+    <span id="pg" class="pill">Postgres …</span>
+    <span id="vk" class="pill">Valkey …</span>
+    <select id="pace" title="Replay speed">
+      <option value="1.5">Live pace</option>
+      <option value="0.4">Fast</option>
+    </select>
+    <select id="parser" title="How raw inputs are read">
+      <option value="golden">Parser: golden (recorded)</option>
+      <option value="llm">Parser: Claude (live)</option>
+    </select>
+    <button id="go" class="primary">Replay the day</button>
+  </div>
+</header>
+<div class="strip">
+  <span><b>Recorded scenario</b> · hotel, guests and day script are synthetic</span>
+  <span>Raw inputs read by: <b id="parsermode">—</b></span>
+  <span>Memory, refusals, expiry and decisions: <b>live on Aiven Postgres + Valkey</b></span>
+</div>
+<div class="banner" id="banner"></div>
+<main>
+  <section>
+    <h2>The day · what the hotel receives</h2>
+    <div id="clock">07:00</div>
+    <div id="timeline"><p class="empty">Press “Replay the day”.</p></div>
+  </section>
+  <section>
+    <h2>Recommendation · waits for a human</h2>
+    <div id="now"><p class="empty">Anima's recommendations appear here, with the reasons it can cite.</p></div>
+    <div class="feed" id="feed"></div>
+  </section>
+  <section>
+    <h2>What Anima knows</h2>
+    <div class="tabs" id="tabs"></div>
+    <div id="memory"><p class="empty">Read from Postgres and Valkey after every event.</p></div>
+    <p class="footnote"><span class="store Postgres">Postgres</span> durable, deleted 36 months after the last confirmation ·
+      <span class="store Valkey">Valkey</span> this stay only, expires by itself at check-out.
+      Only what the guest declared, under a purpose they consented to.</p>
+  </section>
+  <section id="end">
+    <div>
+      <h2>What the hotel loses without Anima · Claire, 11:15</h2>
+      <table class="ba"><thead><tr><th></th><th>Ignores her note</th><th>Honours the note, nobody re-plans</th><th>Anima</th></tr></thead>
+        <tbody id="ba"></tbody></table>
+      <p class="footnote">Computed live by the reference planner on the recorded day. “Ignores her note” is the PMS rule (from the scenario).</p>
+    </div>
+    <div>
+      <h2>Checks on the stores themselves</h2>
+      <div id="checks"></div>
+    </div>
+  </section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+let G = {}, guests = {}, memory = {}, shownGuest = "G001", seen = {}, lastEv = null;
+
+fetch("/api/health").then(r => r.json()).then(h => {
+  const pill = (el, name, s) => { el.className = "pill " + (s.ok ? "ok" : "ko"); el.textContent = `${name} ${s.ok ? "✓ v" + s.version : "✗ " + s.error}`; };
+  pill($("pg"), "Postgres", h.postgres); pill($("vk"), "Valkey", h.valkey);
+  if (!h.llm_available) { const o = $("parser").querySelector('option[value="llm"]'); o.disabled = true; o.textContent += " · no API key"; }
+});
+
+$("go").onclick = async () => {
+  $("go").disabled = true;
+  const r = await fetch(`/api/replay?pace=${$("pace").value}&parser=${$("parser").value}`, {method: "POST"});
+  if (!r.ok) { alert((await r.json()).detail); $("go").disabled = false; }
+};
+
+function reset(f) {
+  G = f.glossary; guests = f.guests; memory = {}; seen = {}; lastEv = null;
+  $("timeline").innerHTML = ""; $("feed").innerHTML = ""; $("banner").innerHTML = "";
+  $("now").innerHTML = '<p class="empty">Waiting for the first recommendation…</p>';
+  $("end").classList.remove("show"); $("ba").innerHTML = ""; $("checks").innerHTML = "";
+  $("memory").innerHTML = '<p class="empty">Reading Postgres and Valkey…</p>';
+  $("parsermode").textContent = f.parser === "llm" ? "Claude, live (scored by eval/parse_eval.py)" : "golden targets (recorded, not a result)";
+  $("tabs").innerHTML = Object.entries(guests).map(([id, n]) =>
+    `<button data-g="${id}" class="${id === shownGuest ? "on" : ""}">${esc(n.replace("SYN-", ""))}</button>`).join("");
+  $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => { shownGuest = b.dataset.g; renderTabs(); renderMemory(); });
+  $("go").disabled = true;
+}
+function renderTabs() { $("tabs").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.g === shownGuest)); }
+
+function onEvent(f) {
+  $("clock").textContent = f.at;
+  if (lastEv) lastEv.classList.remove("current");
+  const div = document.createElement("div");
+  div.className = "ev current"; div.id = "ev" + f.seq;
+  div.innerHTML = `<div><span class="t">${esc(f.at)}</span>${esc(f.summary)}</div>`;
+  $("timeline").prepend(div); lastEv = div;
+}
+function onRaw(f) {
+  const isJson = f.payload.trim().startsWith("{");
+  const el = document.createElement("div");
+  el.className = "raw" + (isJson ? " json" : "");
+  el.innerHTML = `<span class="ch">${esc(f.channel)}</span><q>${esc(f.payload)}</q>
+    <details><summary>read as (${f.parser === "llm" ? "Claude, live" : "golden, recorded"})</summary><pre>${esc(JSON.stringify(f.parsed, null, 1))}</pre></details>`;
+  $("ev" + f.seq)?.appendChild(el);
+}
+
+const cites = list => (list || []).map(c =>
+  `<li><span class="cite ${c.startsWith("X-") ? "ctx" : ""}">${esc(c)}</span>${esc(G[c] || "")}</li>`).join("");
+
+function onCard(f) {
+  const name = f.guest_id && guests[f.guest_id] ? guests[f.guest_id].replace("SYN-", "") : "";
+  if (f.kind === "plan" || (f.kind === "suggestion" && f.room)) {
+    const facts = [];
+    if (f.side) facts.push(`<span>${esc(f.side)} side</span>`);
+    if (f.desk) facts.push(`<span>desk</span>`);
+    if (f.ready_by) facts.push(`<span>ready ${esc(f.ready_by)}</span>`);
+    if (f.wait !== undefined) facts.push(`<span class="${f.wait === 0 ? "good" : ""}">wait ${f.wait} min</span>`);
+    if (f.prioritise) facts.push(`<span class="good">cleaned first</span>`);
+    $("now").innerHTML = `<div class="now"><div class="who">${esc(f.at)} · ${esc(name)}</div>
+      <div class="what">${f.kind === "plan" ? "Room " + esc(f.room) : "Offer room " + esc(f.room) + "?"}</div>
+      <div class="facts">${facts.join("")}</div>
+      <div class="muted" style="font-size:13px">Because</div><ul class="why">${cites(f.cites)}</ul>
+      ${f.alternative ? `<p class="muted">Alternative: ${esc(f.alternative)}</p>` : ""}
+      <div class="validate"><button class="primary" onclick="this.textContent='Validated ✓';this.disabled=true">Validate</button>
+        <small>Nothing happens until a person clicks.</small></div></div>`;
+  } else if (["brief", "check_in", "contradiction", "consent", "arrival"].includes(f.kind)) {
+    $("now").innerHTML = `<div class="now"><div class="who">${esc(f.at)} · ${esc(f.title)}</div>
+      <div style="font-size:16px;margin-top:6px">${f.lines.map(esc).join("<br>")}</div></div>`;
+  } else if (f.kind === "hygiene") {
+    $("banner").innerHTML = `<span class="pill">🛡 ${f.blocked} inferred attribute blocked today</span>
+      <span class="pill">🗑 ${f.expired} memory expired (36 months unconfirmed) and deleted</span>`;
+  }
+  const fc = document.createElement("div");
+  fc.className = "fc " + (f.tone === "info" ? "info" : f.tone === "plan" ? "plan" : "");
+  fc.innerHTML = `<span class="t">${esc(f.at)}</span><b>${esc(f.title)}</b><br>${f.lines.filter(l => !l.startsWith("[")).map(esc).join("<br>")}`;
+  $("feed").prepend(fc);
+}
+
+function onMemory(f) {
+  memory = f.guests;
+  if (f.blocked || f.expired) $("banner").innerHTML = `<span class="pill">🛡 ${f.blocked} inferred attribute blocked today · no guest attached</span>
+    <span class="pill">🗑 ${f.expired} memory expired (36 months unconfirmed) and deleted</span>`;
+  renderMemory();
+}
+function renderMemory() {
+  const rows = memory[shownGuest];
+  if (!rows) return;
+  if (!rows.length) { $("memory").innerHTML = '<p class="empty">Nothing. Anima keeps no memory of this guest.</p>'; return; }
+  $("memory").innerHTML = `<table><thead><tr><th>Claim</th><th>Origin · source</th><th>Purpose</th><th>Kept until</th></tr></thead><tbody>${
+    rows.map(r => {
+      const key = shownGuest + r.claim_id + r.origin + r.needs_reconfirm, isNew = !seen[key]; seen[key] = true;
+      return `<tr class="${isNew && Object.keys(seen).length > rows.length ? "new" : ""}">
+        <td><span class="id">${esc(r.claim_id)}</span>${esc(r.statement)}${r.needs_reconfirm ? '<br><span class="flag">reconfirm next stay</span>' : ""}</td>
+        <td>${esc(r.origin)}<br><span class="muted">${esc(r.source)}</span></td>
+        <td>${esc(r.purpose)}</td>
+        <td>${esc(r.kept_until)}${r.ttl_hours ? ` <span class="muted">(${r.ttl_hours} h)</span>` : ""}<br><span class="store ${r.store}">${r.store}</span></td></tr>`;
+    }).join("")}</tbody></table>`;
+}
+
+function onBeforeAfter(f) {
+  $("end").classList.add("show");
+  $("ba").innerHTML = `
+    <tr><td>Room</td><td>402, street side, under tonight's concert</td><td>${esc(f.static_room)}, found out of service at the desk</td><td>${esc(f.anima_room)}, courtyard, desk</td></tr>
+    <tr><td>Wait on arrival</td><td>0 min</td><td>${f.static_wait} min</td><td>${f.anima_wait} min</td></tr>
+    <tr><td>Times she asks for quiet</td><td>a third time</td><td>0</td><td>0</td></tr>`;
+}
+function onChecks(f) {
+  $("checks").innerHTML = f.results.map(r => `<div class="check"><span class="${r.ok ? "ok" : "ko"}">${r.ok ? "PASS" : "FAIL"}</span> ${esc(r.msg)}</div>`).join("")
+    + `<div class="allpass" style="${f.fails ? "color:var(--bad)" : ""}">${f.fails ? f.fails + " FAIL" : "ALL PASS"}</div>`;
+}
+
+const es = new EventSource("/api/stream");
+es.onmessage = e => {
+  const f = JSON.parse(e.data);
+  ({start: reset, event: onEvent, raw: onRaw, card: onCard, memory: onMemory, before_after: onBeforeAfter, checks: onChecks,
+    error: f => { alert("Replay failed: " + f.error); },
+    done: () => { $("go").disabled = false; }}[f.type] || (() => {}))(f);
+};
+</script>
+</body>
+</html>
