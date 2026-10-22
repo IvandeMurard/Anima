@@ -44,11 +44,18 @@ def check_valkey() -> dict:
         return {"ok": False, "error": type(e).__name__}
 
 
+def store_env_names() -> list[str]:
+    """Names (never values) of env vars that look like store connections: shows what Runtime injected."""
+    hints = ("DATABASE", "POSTGRES", "PG", "VALKEY", "REDIS", "URI", "URL", "AIVEN")
+    return sorted(k for k in os.environ if any(h in k.upper() for h in hints))
+
+
 @app.get("/api/health")
 def health():
     """Always 200 so the app itself counts as up; the body says whether each store is reachable."""
     pg, vk = check_postgres(), check_valkey()
-    return {"app": "ok", "postgres": pg, "valkey": vk, "ready": pg["ok"] and vk["ok"]}
+    return {"app": "ok", "postgres": pg, "valkey": vk, "ready": pg["ok"] and vk["ok"],
+            "env_names": store_env_names()}
 
 
 PAGE = """<!doctype html>
