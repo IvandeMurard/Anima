@@ -22,7 +22,22 @@ PURPOSE_OF = {"eta": "arrival coordination"}                  # everything else:
 PLANNER_KEYS = {"quiet_room", "needs_desk", "eta", "ready_if_early", "extra_pillows"}
 
 S = {"now": None, "seq": 100, "chat": [], "last": None, "decision_id": None, "anticipations": [],
-     "log": [], "llm_calls": 0, "llm_ms": []}
+     "log": [], "llm_calls": 0, "llm_ms": [], "pos_antic": [], "seen": {}}
+
+# Every source gets a rule: what the guest says, we remember; what the hotel sees, we use; what we could guess, we refuse, or we ask.
+SOURCES = [
+    {"id": "whatsapp", "source": "Guest WhatsApp", "kind": "declared by the guest", "rule": "remember, with consent and an expiry"},
+    {"id": "ota", "source": "OTA booking request (Booking.com)", "kind": "declared by the guest", "rule": "remember, with consent and an expiry"},
+    {"id": "pms", "source": "PMS webhooks", "kind": "hotel operations", "rule": "use to plan, never stored about the guest"},
+    {"id": "housekeeping", "source": "Housekeeping / maintenance", "kind": "live context", "rule": "use to plan, never stored about the guest"},
+    {"id": "context", "source": "Rail status, local events", "kind": "live context", "rule": "use to plan; a train only if the guest declared it"},
+    {"id": "pos", "source": "POS (bar, restaurant)", "kind": "behaviour", "rule": "never remembered; may only become a question"},
+    {"id": "outside", "source": "Outside AI agents, reviews", "kind": "guess", "rule": "refused at the door, no guest id kept"},
+]
+
+
+def seen(source_id: str):
+    S["seen"][source_id] = S["seen"].get(source_id, 0) + 1
 
 
 def O():
@@ -58,7 +73,8 @@ def start(pg, vk):
     RD.O = RD.load_oracle()
     RD.reset(pg, vk)
     S.update(now=O().mins("07:00"), seq=100, chat=[], last=None, decision_id=None, anticipations=[], log=[],
-             llm_calls=0, llm_ms=[])
+             llm_calls=0, llm_ms=[], pos_antic=[], seen={})
+    seen("outside"); seen("pms")
     W = O().W
     W.advance(S["now"])
     day_start = O().EVENTS[0]["detail"]["proposed_claim"]          # the traveller-side agent's guess
@@ -102,6 +118,7 @@ def set_time(hhmm: str | None):
             W.leaving[d["room"]] = O().mins(d.get("leaving_at") or d.get("left_at"))
             S["now"] = at_ev
             log("context", f"PMS webhook {ev['at']}: room {d['room']} leaving at {hh(W.leaving[d['room']])}")
+            seen("pms")
     S["now"] = t
     W.advance(t)
 
@@ -130,10 +147,20 @@ def call_parser(channel: str, sender: str | None, text: str) -> dict:
     return ev
 
 
-def guest_message(pg, vk, text: str, at: str | None = None):
-    ev = call_parser("WhatsApp (guest)", CONTACT[CLAIRE], text)       # a failed read changes nothing
+def guest_message(pg, vk, text: str, at: str | None = None, ota: bool = False):
+    if ota:     # OTA emails are masked: the request is matched through the reservation, not the guest's contact
+        ev = call_parser("Booking.com reservation, special request field",
+                         "OTA reservation R-G001 for SYN-Claire Laurent (guest email masked by the OTA)", text)
+        seen("ota")
+    else:
+        ev = call_parser("WhatsApp (guest)", CONTACT[CLAIRE], text)   # a failed read changes nothing
+        seen("whatsapp")
     set_time(at)
-    S["chat"].append({"who": "guest", "text": text, "at": hh(S["now"]), "parsed": ev})
+    if ota:
+        S["chat"].append({"who": "system", "text": f"Booking.com special request: “{text}”", "parsed": ev})
+    else:
+        S["chat"].append({"who": "guest", "text": text, "at": hh(S["now"]), "parsed": ev})
+    S["channel"] = "the Booking.com request" if ota else "WhatsApp"
     gid = ev.get("resolved_guest_id") or CLAIRE
     written, confirmed = [], []
     if ev["type"] == "guest_message":
@@ -156,9 +183,32 @@ def guest_message(pg, vk, text: str, at: str | None = None):
                 written.append(normalise_key(c["key"]))
     else:
         apply_operational(ev)
+    extra = [k for k in written if k not in PLANNER_KEYS]
+    if extra and S["pos_antic"]:
+        S["pos_antic"] = []                                   # asked, answered: now declared, the question is closed
+        log("ask", f"Claire said it herself: {', '.join(extra)} is now declared memory for this stay")
     RD.load_memory(pg, vk)
-    view = replan(pg, vk, f"Claire wrote: \"{text}\"", parsed=ev, written=written, confirmed=confirmed)
-    S["chat"].append({"who": "hotel", "draft": True, "text": draft_reply(view["card"]), "at": hh(S["now"])})
+    who = "Booking.com request" if ota else "Claire wrote"
+    view = replan(pg, vk, f"{who}: \"{text}\"", parsed=ev, written=written, confirmed=confirmed)
+    if not ota:
+        reply = ("Noted, we'll have that ready for you. Thanks Claire!" if extra and set(written) <= set(extra)
+                 else draft_reply(view["card"]))
+        S["chat"].append({"who": "hotel", "draft": True, "text": reply, "at": hh(S["now"])})
+    return state(pg, vk)
+
+
+def ota_request(pg, vk, text: str, at: str | None = None):
+    return guest_message(pg, vk, text, at, ota=True)
+
+
+def pos_receipt(pg, vk, text: str):
+    """Behaviour seen at the bar or restaurant: never becomes memory. At most, a question for the guest."""
+    seen("pos")
+    refuse(pg, f"POS: {text[:50]}", "behavioural", "POS (bar)")
+    a = {"need": f"Seen at the bar: {text}. Not remembered.", "from": ["POS"],
+         "ask": f"We'd be happy to have {text.split('×')[0].split(' x')[0].strip()} ready for you tomorrow too, would you like that?"}
+    S["pos_antic"] = [a]
+    S["anticipations"] = [x for x in S["anticipations"] if x.get("from") != ["POS"]] + [a]
     return state(pg, vk)
 
 
@@ -171,8 +221,8 @@ def write_claim(pg, vk, gid, key, value, said) -> bool:
     S["seq"] += 1
     cid = f"C{S['seq']}"                                     # the planner cites claim ids starting with C
     claim = {"claim_id": cid, "guest_id": gid, "key": key, "value": value,
-             "statement": f"Said on WhatsApp at {hh(S['now'])}: “{said[:90]}”",
-             "origin": "declared", "source": "WhatsApp, this stay", "purpose": purpose, "layer": "working",
+             "statement": f"Said in {S.get('channel', 'WhatsApp')} at {hh(S['now'])}: “{said[:90]}”",
+             "origin": "declared", "source": f"{S.get('channel', 'WhatsApp')}, this stay", "purpose": purpose, "layer": "working",
              "confirmations": 1}
     store = RD.write_working(vk, gid, claim)
     log("write", f"{cid} {key}={value} written to Valkey {store} (expires at check-out), purpose: {purpose}")
@@ -209,6 +259,7 @@ def apply_operational(ev: dict):
 
 def staff_report(pg, vk, text: str, at: str | None = None):
     ev = call_parser("housekeeping app (text message)", None, text)
+    seen("housekeeping")
     set_time(at)
     apply_operational(ev)
     RD.load_memory(pg, vk)
@@ -218,6 +269,7 @@ def staff_report(pg, vk, text: str, at: str | None = None):
 
 def outside_agent(pg, vk, attribute: str):
     """An outside AI agent pushes something it inferred about Claire: refused at the door, always."""
+    seen("outside")
     refuse(pg, attribute[:60], "inferred", "traveller-side AI agent")
     return state(pg, vk)
 
@@ -273,7 +325,7 @@ def replan(pg, vk, trigger, parsed=None, written=(), confirmed=()):
                  "ready_by": p["ready_by"], "wait": p["wait"], "prioritise": p["prioritise"],
                  "cites": sorted(p["cites"]), "alternative": p["alternative"], "no_fit": p["no_fit"],
                  "eta": hh(eta_m), "decision_id": S["decision_id"], "validated": False}
-    S["anticipations"] = anticipate(p)
+    S["anticipations"] = anticipate(p) + S["pos_antic"]
     log("plan", f"re-planned: room {p['room']}, ready {p['ready_by']}, wait {p['wait']} min (decision #{S['decision_id']}, waiting for a human)")
     return {"card": S["last"]}
 
@@ -309,7 +361,8 @@ def ledger(pg, vk):
                 "used_only_if": s.get("used_only_if")} for s in O().CTX["sources"]]
     return {"used": used, "kept_aside": kept_aside, "refused": refused,
             "forgotten": [e for e in S["log"] if e["kind"] == "forget"], "shared": shared,
-            "pushed": bool(last.get("validated")), "context": context}
+            "pushed": bool(last.get("validated")), "context": context,
+            "sources": [{**s, "seen": S["seen"].get(s["id"], 0)} for s in SOURCES]}
 
 
 def normalise_key_of(row) -> str:

@@ -182,6 +182,17 @@ def live_staff(body: dict):
     return live_call(live.staff_report, str(body.get("text", ""))[:500], body.get("at"))
 
 
+@app.post("/api/live/ota")
+def live_ota(body: dict):
+    need_llm()
+    return live_call(live.ota_request, str(body.get("text", ""))[:500], body.get("at"))
+
+
+@app.post("/api/live/pos")
+def live_pos(body: dict):
+    return live_call(live.pos_receipt, str(body.get("text", ""))[:80])
+
+
 @app.post("/api/live/outside")
 def live_outside(body: dict):
     return live_call(live.outside_agent, str(body.get("text", ""))[:120])

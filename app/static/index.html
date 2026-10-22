@@ -153,9 +153,15 @@
     <div class="row"><input type="time" id="l-at" value="08:40" step="300" title="Hotel time">
       <input type="text" id="l-msg" placeholder="Write as Claire…"><button class="primary" id="l-send">Send</button></div>
     <div class="chips" id="chips-guest"></div>
+    <div class="lab">Booking.com reservation · special request field</div>
+    <div class="row"><input type="text" id="l-ota" placeholder="e.g. quiet room please, arriving early"><button id="l-ota-send">Import</button></div>
+    <div class="chips" id="chips-ota"></div>
     <div class="lab">Housekeeping app</div>
     <div class="row"><input type="text" id="l-hk" placeholder="e.g. 206 tap leaking, plumber at 3pm"><button id="l-hk-send">Report</button></div>
     <div class="chips" id="chips-hk"></div>
+    <div class="lab">Bar / restaurant POS · a receipt on Claire's room</div>
+    <div class="row"><input type="text" id="l-pos" placeholder="e.g. oat milk latte ×3"><button id="l-pos-send">Post</button></div>
+    <div class="chips" id="chips-pos"></div>
     <div class="lab">An outside AI agent pushes a guess about Claire</div>
     <div class="row"><input type="text" id="l-out" placeholder="e.g. prefers high floors"><button id="l-out-send">Push</button></div>
   </section>
@@ -345,6 +351,13 @@ $("chips-guest").innerHTML = GUEST_EXAMPLES.map((t, i) => `<button data-i="${i}"
 $("chips-guest").querySelectorAll("button").forEach(b => b.onclick = () => { $("l-msg").value = GUEST_EXAMPLES[b.dataset.i]; $("l-msg").focus(); });
 $("chips-hk").innerHTML = HK_EXAMPLES.map((t, i) => `<button data-i="${i}">${esc(t.slice(0, 42))}…</button>`).join("");
 $("chips-hk").querySelectorAll("button").forEach(b => b.onclick = () => { $("l-hk").value = HK_EXAMPLES[b.dataset.i]; $("l-at").value = "10:20"; });
+const OTA_EXAMPLES = ["Quiet room please, away from the street. I'll need a desk, working trip"];
+const POS_EXAMPLES = ["oat milk latte ×3", "late-night club sandwich at 23:40"];
+const chipsFor = (el, list, input) => { $(el).innerHTML = list.map((t, i) => `<button data-i="${i}">${esc(t.slice(0, 42))}${t.length > 42 ? "…" : ""}</button>`).join("");
+  $(el).querySelectorAll("button").forEach(b => b.onclick = () => { $(input).value = list[b.dataset.i]; }); };
+chipsFor("chips-ota", OTA_EXAMPLES, "l-ota"); chipsFor("chips-pos", POS_EXAMPLES, "l-pos");
+$("l-ota-send").onclick = () => { const t = $("l-ota").value.trim(); if (t) { api("POST", "/api/live/ota", {text: t, at: $("l-at").value}); $("l-ota").value = ""; } };
+$("l-pos-send").onclick = () => { const t = $("l-pos").value.trim(); if (t) { api("POST", "/api/live/pos", {text: t}); $("l-pos").value = ""; } };
 
 async function api(method, url, body, quiet) {
   document.body.classList.add("busy");
@@ -411,7 +424,10 @@ function renderLive(s) {
     <h3>⛔ Refused today (no guest id kept)</h3><ul>${L.refused.map(r => `<li>“${esc(r.attribute)}” · ${esc(r.origin)} · ${esc(r.source)}${r.count > 1 ? " ×" + r.count : ""}</li>`).join("") || "<li class='muted'>nothing</li>"}</ul>
     <h3>🗑 Forgotten</h3><ul>${L.forgotten.map(f => `<li>${esc(f.at)} · ${esc(f.text)}</li>`).join("") || "<li class='muted'>nothing</li>"}</ul>
     <h3>📤 Shared with each tool ${L.pushed ? "<span class='pill ok'>pushed</span>" : "<span class='muted'>(after validation)</span>"}</h3>
-    ${L.shared.map(t => `<div class="tool"><b>${esc(t.tool)}</b> gets <code>${esc(JSON.stringify(t.gets))}</code><br><span class="never">never: ${esc(t.never)}</span></div>`).join("")}`;
+    ${L.shared.map(t => `<div class="tool"><b>${esc(t.tool)}</b> gets <code>${esc(JSON.stringify(t.gets))}</code><br><span class="never">never: ${esc(t.never)}</span></div>`).join("")}
+    <h2 style="margin-top:16px">Every source gets a rule</h2>
+    <table><thead><tr><th>Source</th><th>What it is</th><th>Anima's rule</th><th>Today</th></tr></thead><tbody>${
+      L.sources.map(s => `<tr><td>${esc(s.source)}</td><td>${esc(s.kind)}</td><td>${esc(s.rule)}</td><td>${s.seen}</td></tr>`).join("")}</tbody></table>`;
 }
 setMode(true);
 api("GET", "/api/live/state", null, true);
