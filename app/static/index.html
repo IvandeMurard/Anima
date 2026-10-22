@@ -223,6 +223,44 @@
     .chat { height: 55vh; }
     .now .what { font-size: 26px; }
   }
+
+  /* ---- persona + "how it works" (built by the script at the end of the page) ---- */
+  .persona { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; margin: 16px 24px 0; padding: 18px 22px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .avatar { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 19px; color: var(--panel); background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, var(--vk))); }
+  .persona .name { font-size: 20px; font-weight: 750; letter-spacing: -.02em; }
+  .persona .name small { font-size: 12px; font-weight: 500; color: var(--muted); margin-left: 6px; }
+  .persona .sub { color: var(--muted); font-size: 13px; margin-top: 1px; }
+  .persona .needs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .persona .needs span { font-size: 12.5px; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .persona .needs span.vk { background: var(--vk-soft); color: var(--vk); }
+  .story { display: flex; gap: 10px; align-items: stretch; }
+  .story div { border-radius: 12px; padding: 10px 14px; font-size: 12px; color: var(--muted); min-width: 150px; }
+  .story b { display: block; font-size: 15px; color: var(--ink); margin-top: 2px; }
+  .story .then { background: var(--bad-soft); } .story .then b { color: var(--bad); }
+  .story .nowx { background: var(--accent-soft); } .story .nowx b { color: var(--accent); }
+  .flow { margin: 12px 24px 0; padding: 14px 18px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .flow h2 { margin-bottom: 10px; }
+  .flow ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; counter-reset: f; }
+  .flow li { counter-increment: f; position: relative; padding: 10px 12px; border-radius: 12px; background: var(--bg); font-size: 12px; color: var(--muted); line-height: 1.35; }
+  .flow li b { display: block; color: var(--ink); font-size: 13px; margin-bottom: 2px; }
+  .flow li b::before { content: counter(f) "  "; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .flow li:not(:last-child)::after { content: "→"; position: absolute; right: -9px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 12px; z-index: 1; }
+  .flow li.on { background: var(--accent-soft); color: var(--accent); }
+  .flow li.on b { color: var(--accent); }
+  .flow li.wait { box-shadow: inset 0 0 0 1.5px var(--accent); background: var(--panel); }
+  .flow li .st { display: inline-block; margin-top: 4px; font-size: 10.5px; font-weight: 600; padding: 0 6px; border-radius: 4px; }
+  .flow li .st.pg { background: var(--pg-soft); color: var(--pg); } .flow li .st.vk { background: var(--vk-soft); color: var(--vk); }
+  .hello { margin: 16px 24px 0; padding: 18px 20px; border-radius: var(--radius); color: #fff; background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #1c1b19)); box-shadow: var(--shadow); }
+  @media (prefers-color-scheme: dark) { .hello { color: #111; } }
+  .hello .hi { font-size: 24px; font-weight: 750; letter-spacing: -.02em; }
+  .hello .line { font-size: 14px; opacity: .92; margin-top: 4px; }
+  .hello .room { display: inline-block; margin-top: 10px; padding: 6px 12px; border-radius: 10px; background: rgba(255,255,255,.18); font-weight: 600; font-size: 14px; }
+  @media (max-width: 1100px) { .flow ol { grid-template-columns: repeat(3, 1fr); } .flow li:nth-child(3)::after { display: none; } .persona { grid-template-columns: auto 1fr; } .story { grid-column: 1 / -1; } }
+  @media (max-width: 700px) {
+    .persona, .flow, .hello { margin: 12px 16px 0; }
+    .flow ol { grid-template-columns: 1fr 1fr; } .flow li::after { display: none; }
+    .story div { min-width: 0; flex: 1; }
+  }
 </style>
 </head>
 <body>
@@ -603,6 +641,57 @@ es.onmessage = e => {
     error: f => { alert("Replay failed: " + f.error); },
     done: () => { $("go").disabled = false; }}[f.type] || (() => {}))(f);
 };
+</script>
+<script>
+// ------------------------------------------------------------------ persona + "how it works" (additive, display only)
+(() => {
+  if (typeof renderLive !== "function") return;
+  const el = (cls, html) => { const d = document.createElement("div"); d.className = cls; d.innerHTML = html; return d; };
+  const STEPS = [
+    ["A message arrives", "WhatsApp, a booking request, housekeeping, the PMS", null],
+    ["Claude reads it", "Turns messy text into fields: time, train, room", null],
+    ["Rules check it", "Kept only if she said it, for a purpose she agreed to", null],
+    ["Memory", "Long-term in Postgres, this stay in Valkey", "both"],
+    ["Planner re-plans", "Which room is ready when she arrives, and why", null],
+    ["You decide", "Nothing happens until a person clicks Validate", null],
+  ];
+  const persona = el("persona hotel-only", "");
+  const flow = el("flow hotel-only", `<h2>How Anima works · every message goes through these steps</h2><ol>${STEPS.map(([t, d, s]) =>
+    `<li><b>${t}</b>${d}${s ? '<br><span class="st pg">Postgres</span> <span class="st vk">Valkey</span>' : ""}</li>`).join("")}</ol>`);
+  const hello = el("hello guest-only", "");
+  const metrics = document.getElementById("metrics");
+  metrics.before(persona); persona.after(flow);
+  document.querySelector("main.guest-only").before(hello);
+  setMode(mode);
+
+  const short = s => s.replace(/^Asks for a /, "").replace(/^Works on arrival this stay: /, "").replace(/^Arriving around/, "arriving").split(/[,.]/)[0];
+  const orig = renderLive;
+  renderLive = function (s) {
+    orig(s);
+    try {
+      const mem = s.memory || [], c = s.card || {};
+      const waited = mem.find(r => /waited/i.test(r.statement));
+      const needs = mem.filter(r => r !== waited).map(r => `<span class="${r.store === "Valkey" ? "vk" : ""}" title="${esc(r.statement)}">${esc(short(r.statement))}</span>`).join("");
+      persona.innerHTML = `<div class="avatar">CL</div>
+        <div><div class="name">Claire Laurent<small>SYN · synthetic guest</small></div>
+          <div class="sub">Returning guest · 3rd stay · Classic double · 22–24 Oct${c.eta ? ` · arrives ${esc(c.eta)}` : ""}</div>
+          <div class="needs">${needs || '<span style="background:var(--bg);color:var(--muted)">Nothing kept: she withdrew consent</span>'}</div></div>
+        <div class="story">${waited ? `<div class="then">Last stay<b>Waited 2 h for her room</b></div>` : ""}
+          ${c.room ? `<div class="nowx">This stay<b>Room ${esc(c.room)} · wait ${c.wait ?? "–"} min</b></div>` : ""}</div>`;
+      const done = new Set((s.trace || []).map(t => t.step));
+      const lit = [s.chat && s.chat.length || done.size, s.metrics && s.metrics.llm_calls, done.has("Memory read from the stores"),
+        mem.length, done.has("Planner tool"), c.validated];
+      flow.querySelectorAll("li").forEach((li, i) => {
+        li.classList.toggle("on", !!lit[i]);
+        li.classList.toggle("wait", i === 5 && !!c.room && !c.validated);
+      });
+      hello.innerHTML = `<div class="hi">Bonjour Claire</div>
+        <div class="line">${mem.length ? `Maison Lumen remembers ${mem.length} thing${mem.length > 1 ? "s" : ""} you told us, and nothing else. You can see and erase them below.`
+          : "We keep no memory of you. Anything you tell us stays only as long as you allow."}</div>
+        ${c.room && c.validated ? `<div class="room">Your room ${esc(c.room)} · ready by ${esc(c.ready_by)}</div>` : ""}`;
+    } catch (e) {}
+  };
+})();
 </script>
 </body>
 </html>
