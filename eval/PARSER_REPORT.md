@@ -1,8 +1,23 @@
 # LLM parser report (AC1)
 
+## English inputs, 22 Oct 12:15 (current dataset)
+
+At 12:15 the guest and staff messages were switched to English so judges can read them (ROADMAP decision log). The three free-text inputs were rewritten as messy English texting with the same facts: #1 WhatsApp ("taking the 9:04 TGV so ill be there around 11:15. gotta work as soon as i arrive, if the room isnt ready a quiet corner is fine :)"), #3 housekeeping text ("tap is leaking … plumber around 3pm, im blocking the room"), #7 guest-app reply ("thx but no need to change rooms, im going to the concert tonight, back around 1am"). No golden target changed: the English wording already matches "quiet corner if room not ready" and "leaking tap". `agent/parser.py` was **not** touched (prompt v3, as below).
+
+| | Score from `eval/parse_eval.py` |
+|---|---|
+| **English inputs, prompt v3 unchanged, one run** | **29/29 = 100 %** |
+
+- **Misses:** none. Free-text fields came back exact (`fallback_offered_by_guest: "quiet corner if room not ready"`, `reason: "leaking tap"`); "plumber around 3pm" was again kept out of `back_in_service` (null); #7 proposed `quiet_room=false`, this stay. Extra key `reason: "leak"` on #4 (not scored).
+- **Cost and latency:** 34,778 tokens in, 395 out, ≈ $0.074 per run; median 1.5 s per input, max 6.1 s (first call), wall 16.5 s.
+- **Caveat:** prompt v3 was tuned on the French versions of these same 8 messages. The English texts are new wording, but the facts and targets are identical, so this is **not a held-out set**. One run only.
+- **The honest sentence to say on stage:** "Recorded scenario, 8 synthetic messy inputs: 29 of 29 fields correct, live, with a prompt we tuned this morning on the same scenario; there's no held-out set yet, so treat it as 'works on our day', not a benchmark."
+
+## History: French inputs (before 12:15)
+
 Recorded scenario, synthetic data, 8 raw inputs, **29 scored fields** (the `note` key is not scored). Measured 22 Oct 2026 with `python eval/run_llm_parse.py`, which calls `parse_llm` on every input, writes `eval/predictions.json` and runs `python eval/parse_eval.py`. Nothing in `data/`, the targets or the scorer was changed.
 
-## Result
+### Result (French inputs)
 
 | | Score from `eval/parse_eval.py` |
 |---|---|
@@ -11,7 +26,7 @@ Recorded scenario, synthetic data, 8 raw inputs, **29 scored fields** (the `note
 
 AC1 (≥ 90 %) passes on every run, including the first one. **How to say it:** "recorded scenario, 8 inputs, 97 % of fields correct with an untuned prompt; 100 % on 3 runs after tuning the prompt on the same 8 inputs". The 100 % comes from tuning on these same 8 inputs (no held-out set), so the honest number for new messages is closer to the untuned 97 %. It is not the golden replay: `PARSER=golden` copies the targets, while these are live model outputs.
 
-### Per input, final prompt (last v3 run; `eval/predictions.json` holds it)
+### Per input, final prompt (last v3 run on French inputs; `eval/predictions.json` now holds the English run)
 
 | # | Channel | Fields | Correct | Notes |
 |---|---|---|---|---|
@@ -33,7 +48,7 @@ AC1 (≥ 90 %) passes on every run, including the first one. **How to say it:** 
 | v2: open offers carry the claim keys they were based on, plus a rule for replies | 3 | 28, 28, 29 /29 (97, 97, 100 %) | #1 `fallback_offered_by_guest`: "quiet **area** if room not ready" vs "quiet **corner**" (2 of 3 runs) |
 | v3 (final): "translate the sender's words literally, no synonyms" | 3 | 29, 29, 29 /29 (100 %) | none |
 
-## Failures and why
+### Failures and why (French runs)
 
 1. **#7, reply to an offer (v1).** The model proposed a claim for the detail it saw ("je rentre vers 1h") rather than for the need the offer addressed. The context listed the open offer (room 206) but not *why* it was offered. Fix: the planner's recommendation card already cites C070; `default_context` now turns cited claim ids into keys (`based_on_claims: ["quiet_room", ...]`), and the prompt says a reply's claims cover only that need. That is context the live agent has, not the answer.
 2. **#1, free-text fallback (v2).** "un coin calme" came back as "quiet area" or "quiet corner": both are right, but the scorer matches exact strings. Fix: a general rule to translate the guest's own words literally. That also fits the product rule that memory keeps what the guest declared, not a paraphrase.

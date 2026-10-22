@@ -11,7 +11,7 @@ Read first, in this order: `PROBLEM.md` (problem, success, acceptance criteria, 
 - **No auto-action.** Every recommendation waits for a human click.
 - **No audio processing, no voice input** (DPIA). Voice *output* (TTS brief) is optional and off by default.
 - **No emotional inference.**
-- All docs, code and comments in **English**. Guest and staff messages in the dataset stay in French on purpose (messy real-world input).
+- All docs, code and comments in **English**. Guest and staff messages in the dataset are in English so judges read them instantly, kept messy like real input (typos, abbreviations, run-on texting). Decided 22 Oct 12:15; they were French before.
 - Label honestly: what is live vs recorded; "synthetic", never "validated with hotels".
 
 ## Commands

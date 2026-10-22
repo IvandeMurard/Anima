@@ -38,7 +38,7 @@ The "prefers high floors" pushed by a traveller-side agent never reaches the pan
 **Memory hygiene, visible on screen (the challenge asks for stale and contradicting memories):**
 - **Stale:** at 07:00 the global banner shows "1 memory expired (36 months without confirmation) and deleted" — Malik's old "late check-out" (C071, last confirmed May 2023).
 - **Stronger:** at 11:15 Claire says "the courtyard side, perfect" → C001 goes to 3 confirmations, its 36-month clock restarts today.
-- **Contradiction:** at 16:20 Malik replies "pas la peine, je vais au concert" → a this-stay claim wins for tonight; his durable "quiet" (C070) is **kept**, flagged "reconfirm next stay". Never silently overwritten.
+- **Contradiction:** at 16:20 Malik replies "no need to change rooms, im going to the concert tonight" → a this-stay claim wins for tonight; his durable "quiet" (C070) is **kept**, flagged "reconfirm next stay". Never silently overwritten.
 
 A **Withdraw consent** button on each guest. We use it live on SYN-Hugo Martin at 14:00: his panel empties, and at 17:00 he is placed like a first-time guest.
 
@@ -48,18 +48,18 @@ A **Withdraw consent** button on each guest. We use it live on SYN-Hugo Martin a
 |---|---|---|---|---|
 | 1 | 07:00 | PMS pre-assigned **402**; a traveller-side agent pushes "prefers high floors"; expiry sweep runs | "Move to **206** (courtyard, desk, ready 11:50 for a 15:00 arrival). 402 faces the street and a concert runs there tonight [C001] [X-EVT-1]." Global banner: *1 inferred attribute blocked · 1 memory expired.* | Validate |
 | 2 | 08:15 | PMS webhook: 206 leaves at 09:30 instead of 11:00 | No change. | — |
-| 3 | 08:40 | **WhatsApp, in French:** "je prends le TGV de 9h04, je serai là vers 11h15…" | C005 appears in the panel. "She now arrives at 11:15. In the normal queue 206 is ready at 11:50 (35 min wait). Clean it first: ready 10:30. Last time she waited 2h [C003] [C005]." Queue view: 206 jumps ahead of 201, 203, 301, 404. | Validate |
+| 3 | 08:40 | **WhatsApp:** "taking the 9:04 TGV so ill be there around 11:15…" | C005 appears in the panel. "She now arrives at 11:15. In the normal queue 206 is ready at 11:50 (35 min wait). Clean it first: ready 10:30. Last time she waited 2h [C003] [C005]." Queue view: 206 jumps ahead of 201, 203, 301, 404. | Validate |
 | 4 | 10:05 | 305 checks out early | No change (R5). | — |
-| 5 | 10:20 | **Housekeeping app text:** "206 salle de bain finie mais le robinet fuit…" + maintenance ticket (back 16:00) | "206 out of service. Switch to **305**: the attendant who just finished 206 takes it next instead of 203, ready 11:10, before she arrives." | Validate |
+| 5 | 10:20 | **Housekeeping app text:** "206 bathroom done but the tap is leaking…" + maintenance ticket (back 16:00) | "206 out of service. Switch to **305**: the attendant who just finished 206 takes it next instead of 203, ready 11:10, before she arrives." | Validate |
 | 6 | 11:05 | Rail API: TGV 6612 arrived 10:52 (tracked only because she told us) | **Brief** (text, or voice if on): "Claire Laurent, third stay, arrives in about 10 minutes: she asked for a quiet room and is in 305, courtyard side, ready at 11:10. She told us she works on arrival, so the desk is set up and there is nothing to ask her again." | Play |
 | 7 | 11:15 | Check-in; Claire: "the courtyard side, perfect" | ✓ 0 min wait, nothing asked twice. C001 → 3 confirmations, clock restarted. Before/after table. | — |
 | 8 | 14:00 | SYN-Hugo Martin withdraws consent in the app | His panel empties, live. | — |
 | 9 | 16:00 | Maintenance ticket: 206 resolved | "206 is back, ready 16:40. SYN-Malik Benali (302, street side) asked for a quiet room [C070]; concert at 20:00 [X-EVT-1]. Offer him 206?" | Human decides |
-| 10 | 16:20 | **Guest app, in French:** "pas la peine de changer, je vais au concert, je rentre vers 1h" | "Offer withdrawn, 206 released. For tonight his newest word wins; 'quiet' (C070) kept, to reconfirm next stay." | — |
+| 10 | 16:20 | **Guest app:** "thx but no need to change rooms, im going to the concert tonight, back around 1am" | "Offer withdrawn, 206 released. For tonight his newest word wins; 'quiet' (C070) kept, to reconfirm next stay." | — |
 | 11 | 17:00 | Arrivals: Hugo (consent withdrawn), Tom (first stay) | Standard rooms, no memory used, nothing cited. | — |
 
 **Three beats to say out loud:**
-1. **Screen 3:** it read a messy French message and moved her room to the front of the queue: 35 minutes of waiting avoided.
+1. **Screen 3:** it read a messy WhatsApp message and moved her room to the front of the queue: 35 minutes of waiting avoided.
 2. **Screen 5:** a tap broke, and she never knew.
 3. **Screen 1:** it refused a guess it was handed, because she never said it.
 
