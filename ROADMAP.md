@@ -49,6 +49,9 @@ The AI cannot do this part: it needs console logins and admin rights. Start the 
    ```
    Both must print `ALL PASS`. If `--reset` fails on `DROP SCHEMA public` or `FLUSHDB`, tell `AI` (fallback: drop the tables by name)
 
+   On Windows, create the virtualenv **outside `%TEMP%`**: Windows application control blocks psycopg's compiled library there ("DLL load failed").
+8. [ ] `Ivan` or `Collab` Check the T1a app against Aiven locally: `uvicorn app.main:app --port 8080`, open http://localhost:8080, expect "Postgres ✓ Valkey ✓"
+
 **Framing (Ivan, same slot):**
 - [ ] Read `research/` (BMAD discovery, in progress) and confirm the main message above; log it below
 - [ ] Book 1-2 hotelier calls (script in `PITCH.md`). Ask what a room-related complaint from a regular costs them
@@ -57,7 +60,7 @@ The AI cannot do this part: it needs console logins and admin rights. Start the 
 
 Why first: Aiven Runtime is the riskiest unknown (new product, limited availability). Deploy something trivial, then build on a pipeline we know works.
 
-- [ ] `AI` `Dockerfile` (python:3.12-slim, `EXPOSE 8080`), `.dockerignore`, root `requirements.txt`, minimal FastAPI app with `GET /api/health` (Postgres `SELECT 1`, Valkey `PING`)
+- [x] `AI` `Dockerfile` (python:3.12-slim, `EXPOSE 8080`), `.dockerignore`, root `requirements.txt`, minimal FastAPI app with `GET /api/health` (Postgres `SELECT 1`, Valkey `PING`). Tested locally without stores; not yet against Aiven, Docker build not yet run
 - [ ] `Ivan` Aiven console → **Runtime → Deploy application** → repo `IvandeMurard/Anima`, branch `main` → scan (it reads the port from `EXPOSE`) → deploy
 - [ ] `Ivan` Application → **Connected services** → add `anima-pg` and `anima-valkey`. They arrive as `DATABASE_URL` and `VALKEY_URL` by default, which is what the code reads
 - [ ] `Ivan` Open the public URL, see "Postgres ✓ Valkey ✓"

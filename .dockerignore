@@ -1,0 +1,9 @@
+.git
+.env
+.claude
+_bmad
+_bmad-output
+research
+**/__pycache__
+**/*.pyc
+eval/predictions.json

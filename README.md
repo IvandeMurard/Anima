@@ -35,6 +35,7 @@ python reference/replay.py   # replay the day -> must print ALL PASS
 python eval/parse_eval.py --self-test   # check the parser scorer
 bash demo/sandbox_setup.sh              # local Postgres 16 + Valkey (Ubuntu/Debian)
 python demo/run_demo.py --reset --pace 1.5   # the demo, through the data layer
+uvicorn app.main:app --port 8080             # web app (the root Dockerfile deploys it on Aiven Runtime)
 # on Aiven: DATABASE_URL=... VALKEY_URL=... python demo/run_demo.py --reset
 ```
 
