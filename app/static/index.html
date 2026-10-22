@@ -453,7 +453,11 @@ function renderLive(s) {
       ${c.alternative ? `<p class="muted">Alternative if she can't wait: ${esc(c.alternative)}</p>` : ""}
       <div class="validate">${c.validated ? "<b style='color:var(--accent)'>Validated ✓ pushed to the tools</b>"
         : `<button class="primary" onclick="api('POST','/api/live/validate')">Validate</button>`}
-        <small>Decision #${c.decision_id} · nothing happens until a person clicks.</small></div></div>`;
+        <small>Decision #${c.decision_id} · nothing happens until a person clicks.</small></div>
+      ${(s.trace || []).length ? `<details open style="margin-top:10px"><summary><b>How Anima got here</b> · ${s.trace.length} steps</summary>
+        <ol style="margin:6px 0 0;padding-left:20px;font-size:13px">${s.trace.map(t => `<li style="margin:3px 0"><b>${esc(t.step)}</b>
+          ${t.ms !== null && t.ms !== undefined ? `<span class="muted">· ${t.ms >= 1000 ? (t.ms / 1000).toFixed(1) + " s" : t.ms + " ms"}</span>` : ""}<br>
+          <span class="muted">${esc(t.detail)}</span></li>`).join("")}</ol></details>` : ""}</div>`;
   }
   $("l-antic").innerHTML = s.anticipations.length ? s.anticipations.map((a, i) => `<div class="antic"><b>${esc(a.need)}</b>
       <div class="meta">from: ${(a.from || []).map(x => `<span class="cite ${String(x).startsWith("X-") ? "ctx" : ""}">${esc(x)}</span>`).join("")} · not stored</div>

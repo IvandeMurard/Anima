@@ -67,13 +67,18 @@ def log(kind: str, text: str):
     S["log"].append({"at": hh(S["now"]), "kind": kind, "text": text})
 
 
+def step(name: str, detail: str, ms: float | None = None):
+    """One step of the agent's trace for the current input (shown under the recommendation)."""
+    S.setdefault("trace", []).append({"step": name, "detail": detail, "ms": round(ms) if ms is not None else None})
+
+
 # ------------------------------------------------------------------ start / reset
 def start(pg, vk):
     """New live day at 07:00: fresh world, seeded stores, morning sweep, first plan."""
     RD.O = RD.load_oracle()
     RD.reset(pg, vk)
     S.update(now=O().mins("07:00"), seq=100, chat=[], last=None, decision_id=None, anticipations=[], log=[],
-             llm_calls=0, llm_ms=[], pos_antic=[], seen={})
+             llm_calls=0, llm_ms=[], pos_antic=[], seen={}, trace=[])
     seen("outside"); seen("pms")
     W = O().W
     W.advance(S["now"])
@@ -90,6 +95,8 @@ def start(pg, vk):
                       "Don't enter real personal data."})
     replan(pg, vk, "Day opens: PMS put Claire in 402 (street side)")
     set_time("08:30")                       # the morning has started: the PMS feed has already flowed in
+    S["trace"] = []
+    step("Hotel context", "PMS feed since 07:00: check-outs; a traveller-side agent's guess refused; 1 memory expired")
     return replan(pg, vk, "08:30: Claire arrives today at 15:00 (booking)")
 
 
@@ -154,7 +161,12 @@ def call_parser(channel: str, sender: str | None, text: str) -> dict:
     item = {"channel": channel, "format": "text", "lang": "en", "from": sender, "payload": text}
     t0 = datetime.now()
     ev = parse_llm(item, context_for_parser())
-    S["llm_calls"] += 1; S["llm_ms"].append(int((datetime.now() - t0).total_seconds() * 1000))
+    ms = int((datetime.now() - t0).total_seconds() * 1000)
+    S["llm_calls"] += 1; S["llm_ms"].append(ms)
+    S["trace"] = []
+    proposed = ev.get("claims_to_write") or []
+    step("Read by Claude", f"{channel} → event '{ev['type']}'"
+         + (f", proposes {len(proposed)} claim(s), recognises {len(ev.get('already_known') or [])} already known" if "claims_to_write" in ev else ""), ms)
     return ev
 
 
@@ -205,6 +217,7 @@ def guest_message(pg, vk, text: str, at: str | None = None, ota: bool = False):
         reply = ("Noted, we'll have that ready for you. Thanks Claire!" if extra and set(written) <= set(extra)
                  else draft_reply(view["card"]))
         S["chat"].append({"who": "hotel", "draft": True, "text": reply, "at": hh(S["now"])})
+        step("Reply drafted", "to Claire on WhatsApp; sent only when staff click Send")
     return state(pg, vk)
 
 
@@ -215,7 +228,10 @@ def ota_request(pg, vk, text: str, at: str | None = None):
 def pos_receipt(pg, vk, text: str):
     """Behaviour seen at the bar or restaurant: never becomes memory. At most, a question for the guest."""
     seen("pos")
+    S["trace"] = []
+    step("Source rule", "POS receipt = behaviour: never remembered (no LLM needed)")
     refuse(pg, f"POS: {text[:50]}", "behavioural", "POS (bar)")
+    step("Anticipation", "turned into a question for Claire; stored only if she says yes")
     a = {"need": f"Seen at the bar: {text}. Not remembered.", "from": ["POS"],
          "ask": f"We'd be happy to have {text.split('×')[0].split(' x')[0].strip()} ready for you tomorrow too, would you like that?"}
     S["pos_antic"] = [a]
@@ -228,6 +244,7 @@ def write_claim(pg, vk, gid, key, value, said) -> bool:
     purpose = PURPOSE_OF.get(key, "stay personalisation")
     if not RD.consented(pg, gid, purpose):
         refuse(pg, key, "declared, no consent for this purpose", "WhatsApp")
+        step("Write rule", f"'{key}' refused: no consent for '{purpose}'")
         return False
     S["seq"] += 1
     cid = f"C{S['seq']}"                                     # the planner cites claim ids starting with C
@@ -235,8 +252,11 @@ def write_claim(pg, vk, gid, key, value, said) -> bool:
              "statement": f"Said in {S.get('channel', 'WhatsApp')} at {hh(S['now'])}: “{said[:90]}”",
              "origin": "declared", "source": f"{S.get('channel', 'WhatsApp')}, this stay", "purpose": purpose, "layer": "working",
              "confirmations": 1}
+    t0 = datetime.now()
     store = RD.write_working(vk, gid, claim)
     log("write", f"{cid} {key}={value} written to Valkey {store} (expires at check-out), purpose: {purpose}")
+    step("Write rule ✓", f"'{key}' declared by the guest, consent '{purpose}' → {cid} in Valkey {store}, TTL until check-out",
+         (datetime.now() - t0).total_seconds() * 1000)
     return True
 
 
@@ -248,6 +268,7 @@ def confirm(pg, gid, key) -> bool:
     pg.commit()
     if row:
         log("confirm", f"{row[0]} said again: confirmed {row[1]}×, now kept until {row[2]} (clock restarted)")
+        step("Memory confirmed", f"{row[0]} said again → {row[1]}× in Postgres, kept until {row[2]}")
     return bool(row)
 
 
@@ -260,6 +281,7 @@ def apply_operational(ev: dict):
         if ev["room"] in W.pins:
             W.pins.remove(ev["room"])
         log("context", f"room {ev['room']} out of service ({ev.get('reason') or 'no reason given'})")
+        step("Hotel context", f"room {ev['room']} out of service: used to plan, never stored about a guest")
     elif t == "back_in_service":
         W.reclean[ev["room"]] = S["now"]
         log("context", f"room {ev['room']} back in service, needs a re-clean")
@@ -281,7 +303,10 @@ def staff_report(pg, vk, text: str, at: str | None = None):
 def outside_agent(pg, vk, attribute: str):
     """An outside AI agent pushes something it inferred about Claire: refused at the door, always."""
     seen("outside")
+    S["trace"] = []
+    step("Source rule", "outside AI agent = a guess, not a declaration")
     refuse(pg, attribute[:60], "inferred", "traveller-side AI agent")
+    step("Write rule ✗", f"'{attribute[:60]}' refused at the door; counted with no guest id")
     return state(pg, vk)
 
 
@@ -293,6 +318,7 @@ def validate(pg, vk):
             room = c.fetchone()[0]
         pg.commit()
         log("human", f"front desk validated room {room} (decision #{S['decision_id']}): only now is it pushed to the tools")
+        step("Validated by a human", f"room {room} pushed to the housekeeping app, the PMS and the front-desk brief, each with only what it needs")
         S["last"]["validated"] = True
     return state(pg, vk)
 
@@ -322,7 +348,14 @@ def answer_anticipation(pg, vk, index: int):
 # ------------------------------------------------------------------ plan, ledger, anticipations
 def replan(pg, vk, trigger, parsed=None, written=(), confirmed=()):
     W, now = O().W, S["now"]
+    mem = O().claims(CLAIRE)
+    step("Memory read from the stores", f"{sum(c.get('layer') == 'semantic' for c in mem)} durable (Postgres) + "
+         f"{sum(c.get('layer') == 'working' for c in mem)} this-stay (Valkey); only declared, consented, unexpired")
+    t0 = datetime.now()
     p = O().plan_room(W, CLAIRE, now)
+    step("Planner tool", f"room {p['room']}, ready {p['ready_by']}, wait {p['wait']} min"
+         + (", moved to the front of the cleaning queue" if p["prioritise"] else "")
+         + f"; cites {', '.join(sorted(p['cites'])) or 'nothing'}", (datetime.now() - t0).total_seconds() * 1000)
     with pg.cursor() as c:
         c.execute("""INSERT INTO decisions (at, guest_id, room, ready_by, cites, alternative)
                      VALUES (%s,%s,%s,%s,%s,%s) RETURNING id""",
@@ -337,6 +370,8 @@ def replan(pg, vk, trigger, parsed=None, written=(), confirmed=()):
                  "cites": sorted(p["cites"]), "alternative": p["alternative"], "no_fit": p["no_fit"],
                  "eta": hh(eta_m), "decision_id": S["decision_id"], "validated": False}
     S["anticipations"] = anticipate(p) + S["pos_antic"]
+    step("Anticipations", f"{len(S['anticipations'])} question(s) from declared needs + live context; none stored")
+    step("Waiting for a human", f"decision #{S['decision_id']} logged in Postgres; nothing is pushed to the tools before Validate")
     log("plan", f"re-planned: room {p['room']}, ready {p['ready_by']}, wait {p['wait']} min (decision #{S['decision_id']}, waiting for a human)")
     return {"card": S["last"]}
 
@@ -423,6 +458,7 @@ def state(pg, vk) -> dict:
     ms = S["llm_ms"]
     return {"now": hh(S["now"]), "chat": S["chat"], "card": S["last"], "anticipations": S["anticipations"],
             "ledger": ledger(pg, vk), "memory": RD.memory_snapshot(pg, vk, CLAIRE), "log": S["log"][-12:],
+            "trace": S.get("trace", []),
             "metrics": {"blocked": blocked, "expired": S.get("expired", 0), "decisions": n_dec, "validated": n_val,
                         "inferred_stored": inferred, "llm_calls": S["llm_calls"],
                         "llm_median_ms": sorted(ms)[len(ms) // 2] if ms else None,

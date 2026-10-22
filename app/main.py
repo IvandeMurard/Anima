@@ -143,6 +143,7 @@ def live_call(fn, *args):
         pg = psycopg.connect(os.environ["DATABASE_URL"])
         vk = valkey.from_url(os.environ["VALKEY_URL"])
         try:
+            vk.ping()                                # open the TLS connection now, not inside a timed step
             if fn is not live.start and live.S["now"] is None:
                 live.start(pg, vk)                   # the hotel's day is already running: no "start" for users
             out = fn(pg, vk, *args)
