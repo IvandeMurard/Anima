@@ -104,6 +104,7 @@ def start_replay(pace: float = 1.5, parser: str = "golden"):
             raise HTTPException(409, "a replay is already running")
         RUN["id"] += 1; RUN["frames"] = []; RUN["running"] = True
         run_id = RUN["id"]
+    live.S["now"] = None                         # the tour resets the stores: a live day must restart
     threading.Thread(target=replay, args=(run_id, max(0.0, min(pace, 5.0)), parser), daemon=True).start()
     return {"run": run_id}
 
@@ -125,6 +126,80 @@ async def stream():
             await asyncio.sleep(0.2)
     return StreamingResponse(frames(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+# ------------------------------------------------------------------ live mode ("Try it")
+import live  # noqa: E402  (demo/live.py)
+
+LIVE_LOCK = threading.Lock()
+
+
+def live_call(fn, *args):
+    """Run one live action on fresh connections; refuse while the guided tour is replaying."""
+    with LOCK:
+        if RUN["running"]:
+            raise HTTPException(409, "the guided tour is replaying; wait for it to finish")
+    if fn is not live.start and live.S["now"] is None:
+        raise HTTPException(409, "press Start first")
+    with LIVE_LOCK:
+        pg = psycopg.connect(os.environ["DATABASE_URL"])
+        vk = valkey.from_url(os.environ["VALKEY_URL"])
+        try:
+            out = fn(pg, vk, *args)
+            return json.loads(live.dumps(out if fn is not live.start else live.state(pg, vk)))
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(500, f"live step failed: {type(e).__name__}")
+        finally:
+            pg.close()
+
+
+def need_llm():
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        raise HTTPException(400, "ANTHROPIC_API_KEY not set: live reading of messages is unavailable")
+
+
+@app.post("/api/live/start")
+def live_start():
+    return live_call(live.start)
+
+
+@app.get("/api/live/state")
+def live_state():
+    return live_call(live.state)
+
+
+@app.post("/api/live/guest")
+def live_guest(body: dict):
+    need_llm()
+    return live_call(live.guest_message, str(body.get("text", ""))[:500], body.get("at"))
+
+
+@app.post("/api/live/staff")
+def live_staff(body: dict):
+    need_llm()
+    return live_call(live.staff_report, str(body.get("text", ""))[:500], body.get("at"))
+
+
+@app.post("/api/live/outside")
+def live_outside(body: dict):
+    return live_call(live.outside_agent, str(body.get("text", ""))[:120])
+
+
+@app.post("/api/live/validate")
+def live_validate():
+    return live_call(live.validate)
+
+
+@app.post("/api/live/withdraw")
+def live_withdraw():
+    return live_call(live.withdraw)
+
+
+@app.post("/api/live/ask/{index}")
+def live_ask(index: int):
+    return live_call(live.answer_anticipation, index)
 
 
 @app.get("/")

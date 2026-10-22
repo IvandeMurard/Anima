@@ -86,14 +86,47 @@
   .ba th:last-child, .ba td:last-child { background: var(--accent-soft); font-weight: 600; }
   .check { font-size: 13px; margin: 3px 0; } .check .ok { color: var(--accent); font-weight: 700; } .check .ko { color: var(--bad); font-weight: 700; }
   .allpass { font-size: 18px; font-weight: 700; color: var(--accent); margin-top: 8px; }
+  .modes { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; }
+  .modes button { border: 0; padding: 5px 12px; cursor: pointer; background: transparent; }
+  .modes button.on { background: var(--ink); color: var(--panel); }
+  .hidden { display: none !important; }
+  .metrics { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 20px 0; }
+  .metric { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; font-size: 12px; color: var(--muted); }
+  .metric b { display: block; font-size: 18px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .chat { background: var(--bg); border-radius: 10px; padding: 10px; height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .bubble { max-width: 85%; padding: 7px 10px; border-radius: 12px; font-size: 14px; }
+  .bubble.guest { align-self: flex-end; background: #d9fdd3; color: #111; border-bottom-right-radius: 3px; }
+  .bubble.hotel { align-self: flex-start; background: var(--panel); border: 1px solid var(--line); border-bottom-left-radius: 3px; }
+  .bubble.draft { border-style: dashed; }
+  .bubble.system { align-self: center; font-size: 12px; color: var(--muted); background: transparent; text-align: center; }
+  .bubble small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  @media (prefers-color-scheme: dark) { .bubble.guest { background: #005c4b; color: #e9edef; } }
+  .row { display: flex; gap: 6px; margin-top: 8px; }
+  .row input[type=text] { flex: 1; min-width: 0; font: inherit; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+  .row input[type=time] { font: inherit; padding: 6px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chips button { font-size: 12px; padding: 3px 9px; cursor: pointer; border-radius: 999px; }
+  .lab { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-top: 14px; }
+  .antic { border: 1px dashed var(--accent); border-radius: 10px; padding: 8px 10px; margin: 8px 0; font-size: 14px; }
+  .antic .meta { font-size: 12px; color: var(--muted); }
+  .antic button { font-size: 12px; padding: 3px 9px; margin-top: 4px; cursor: pointer; }
+  .ledger h3 { font-size: 13px; margin: 12px 0 4px; }
+  .ledger ul { margin: 0; padding-left: 18px; font-size: 13px; }
+  .ledger li { margin: 3px 0; }
+  .tool { font-size: 13px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; margin: 5px 0; }
+  .tool code { font-family: var(--mono); font-size: 12px; }
+  .tool .never { color: var(--bad); font-size: 12px; }
+  .busy { opacity: .6; pointer-events: none; }
 </style>
 </head>
 <body>
 <header>
   <div class="brand"><b>Anima</b><span>Maison Lumen · front office · 22 Oct</span></div>
+  <div class="modes"><button id="m-live" class="on">Try it</button><button id="m-tour">Guided tour</button></div>
   <div class="controls">
     <span id="pg" class="pill">Postgres …</span>
     <span id="vk" class="pill">Valkey …</span>
+    <span class="tour-only controls hidden">
     <select id="pace" title="Replay speed">
       <option value="1.5">Live pace</option>
       <option value="0.4">Fast</option>
@@ -103,15 +136,51 @@
       <option value="llm">Parser: Claude (live)</option>
     </select>
     <button id="go" class="primary">Replay the day</button>
+    </span>
+    <button id="l-start" class="primary live-only">Start a new day</button>
   </div>
 </header>
-<div class="strip">
+<div class="strip live-only">
+  <span><b>Live</b> · your messages are read by Claude, checked by the memory rules, planned by the reference planner</span>
+  <span>Guests are <b>synthetic</b> · don't type real personal data</span>
+  <span>Memory and decisions: <b>live on Aiven Postgres + Valkey</b></span>
+</div>
+<div class="metrics live-only" id="metrics"></div>
+<main class="live-only" id="live">
+  <section>
+    <h2>WhatsApp · SYN-Claire Laurent (simulated)</h2>
+    <div class="chat" id="chat"><p class="empty">Press “Start a new day”.</p></div>
+    <div class="row"><input type="time" id="l-at" value="08:40" step="300" title="Hotel time">
+      <input type="text" id="l-msg" placeholder="Write as Claire…"><button class="primary" id="l-send">Send</button></div>
+    <div class="chips" id="chips-guest"></div>
+    <div class="lab">Housekeeping app</div>
+    <div class="row"><input type="text" id="l-hk" placeholder="e.g. 206 tap leaking, plumber at 3pm"><button id="l-hk-send">Report</button></div>
+    <div class="chips" id="chips-hk"></div>
+    <div class="lab">An outside AI agent pushes a guess about Claire</div>
+    <div class="row"><input type="text" id="l-out" placeholder="e.g. prefers high floors"><button id="l-out-send">Push</button></div>
+  </section>
+  <section>
+    <h2>Recommendation · waits for a human</h2>
+    <div id="l-card"><p class="empty">No recommendation yet.</p></div>
+    <div class="lab">Anima anticipates · asks, doesn't assume</div>
+    <div id="l-antic"><p class="empty">Nothing yet.</p></div>
+    <div class="lab">Agent log</div>
+    <div id="l-log" class="feed"></div>
+  </section>
+  <section>
+    <h2>What Anima knows about Claire</h2>
+    <div id="l-mem"><p class="empty">—</p></div>
+    <button id="l-withdraw" style="margin-top:8px">Claire withdraws consent</button>
+    <div class="ledger" id="l-ledger"></div>
+  </section>
+</main>
+<div class="strip tour-only hidden">
   <span><b>Recorded scenario</b> · hotel, guests and day script are synthetic</span>
   <span>Raw inputs read by: <b id="parsermode">—</b></span>
   <span>Memory, refusals, expiry and decisions: <b>live on Aiven Postgres + Valkey</b></span>
 </div>
-<div class="banner" id="banner"></div>
-<main>
+<div class="banner tour-only hidden" id="banner"></div>
+<main class="tour-only hidden">
   <section>
     <h2>The day · what the hotel receives</h2>
     <div id="clock">07:00</div>
@@ -255,6 +324,97 @@ function onChecks(f) {
   $("checks").innerHTML = f.results.map(r => `<div class="check"><span class="${r.ok ? "ok" : "ko"}">${r.ok ? "PASS" : "FAIL"}</span> ${esc(r.msg)}</div>`).join("")
     + `<div class="allpass" style="${f.fails ? "color:var(--bad)" : ""}">${f.fails ? f.fails + " FAIL" : "ALL PASS"}</div>`;
 }
+
+// ------------------------------------------------------------------ live mode ("Try it")
+function setMode(live) {
+  document.querySelectorAll(".live-only").forEach(e => e.classList.toggle("hidden", !live));
+  document.querySelectorAll(".tour-only").forEach(e => e.classList.toggle("hidden", live));
+  $("m-live").classList.toggle("on", live); $("m-tour").classList.toggle("on", !live);
+}
+$("m-live").onclick = () => { setMode(true); api("GET", "/api/live/state", null, true); };
+$("m-tour").onclick = () => setMode(false);
+
+const GUEST_EXAMPLES = [
+  "hi! change of plans, I'm on the 9:04 TGV, should be there around 11:15. need to work right away",
+  "can I get a quiet room please? last time the street was so loud",
+  "train delayed, more like 12:30 now sorry",
+];
+const HK_EXAMPLES = ["206 bathroom done but the tap is leaking all over the floor, plumber coming around 3pm",
+                     "305 is clean and checked"];
+$("chips-guest").innerHTML = GUEST_EXAMPLES.map((t, i) => `<button data-i="${i}">${esc(t.slice(0, 42))}…</button>`).join("");
+$("chips-guest").querySelectorAll("button").forEach(b => b.onclick = () => { $("l-msg").value = GUEST_EXAMPLES[b.dataset.i]; $("l-msg").focus(); });
+$("chips-hk").innerHTML = HK_EXAMPLES.map((t, i) => `<button data-i="${i}">${esc(t.slice(0, 42))}…</button>`).join("");
+$("chips-hk").querySelectorAll("button").forEach(b => b.onclick = () => { $("l-hk").value = HK_EXAMPLES[b.dataset.i]; $("l-at").value = "10:20"; });
+
+async function api(method, url, body, quiet) {
+  document.body.classList.add("busy");
+  try {
+    const r = await fetch(url, {method, headers: {"Content-Type": "application/json"}, body: body ? JSON.stringify(body) : undefined});
+    const j = await r.json();
+    if (!r.ok) { if (!quiet) alert(j.detail); return; }
+    renderLive(j);
+  } catch (e) { if (!quiet) alert("Request failed"); }
+  finally { document.body.classList.remove("busy"); }
+}
+$("l-start").onclick = () => api("POST", "/api/live/start");
+$("l-send").onclick = () => { const t = $("l-msg").value.trim(); if (t) { api("POST", "/api/live/guest", {text: t, at: $("l-at").value}); $("l-msg").value = ""; } };
+$("l-msg").onkeydown = e => { if (e.key === "Enter") $("l-send").click(); };
+$("l-hk-send").onclick = () => { const t = $("l-hk").value.trim(); if (t) { api("POST", "/api/live/staff", {text: t, at: $("l-at").value}); $("l-hk").value = ""; } };
+$("l-out-send").onclick = () => { const t = $("l-out").value.trim(); if (t) { api("POST", "/api/live/outside", {text: t}); $("l-out").value = ""; } };
+$("l-withdraw").onclick = () => api("POST", "/api/live/withdraw");
+
+function renderLive(s) {
+  G = s.glossary || G;
+  const m = s.metrics;
+  $("metrics").innerHTML = [
+    ["Hotel time", s.now], ["Guesses refused", m.blocked], ["Guesses stored", m.inferred_stored],
+    ["Memories expired today", m.expired], ["Recommendations", m.decisions], ["Validated by a human", m.validated],
+    ["Actions without a human", m.auto_actions],
+    ["Messages read by Claude", m.llm_calls], ["Median read time", m.llm_median_ms ? (m.llm_median_ms / 1000).toFixed(1) + " s" : "—"],
+  ].map(([k, v]) => `<div class="metric"><b>${esc(v)}</b>${esc(k)}</div>`).join("");
+
+  $("chat").innerHTML = s.chat.map(b => `<div class="bubble ${b.who} ${b.draft ? "draft" : ""}">${esc(b.text)}
+    ${b.who === "guest" ? `<small>${esc(b.at)} · read by Claude as <code>${esc(JSON.stringify(b.parsed))}</code></small>` : ""}
+    ${b.draft ? `<small>${esc(b.at)} · drafted by Anima, sent only if staff approve</small>` : (b.who === "hotel" ? `<small>${esc(b.at)} · hotel</small>` : "")}</div>`).join("");
+  $("chat").scrollTop = $("chat").scrollHeight;
+
+  const c = s.card;
+  if (c) {
+    const facts = [`<span>${esc(c.side)} side</span>`, c.desk ? "<span>desk</span>" : "", `<span>ready ${esc(c.ready_by)}</span>`,
+      `<span>arrives ${esc(c.eta)}</span>`, `<span class="${c.wait === 0 ? "good" : ""}">wait ${c.wait} min</span>`,
+      c.prioritise ? '<span class="good">cleaned first</span>' : ""].join("");
+    $("l-card").innerHTML = `<div class="now"><div class="who">${esc(s.now)} · ${esc(c.trigger)}</div>
+      <div class="what">Claire → room ${esc(c.room)}</div><div class="facts">${facts}</div>
+      <div class="muted" style="font-size:13px">Because</div><ul class="why">${cites(c.cites) || "<li class='muted'>No memory used: standard placement</li>"}</ul>
+      ${c.alternative ? `<p class="muted">Alternative if she can't wait: ${esc(c.alternative)}</p>` : ""}
+      <div class="validate">${c.validated ? "<b style='color:var(--accent)'>Validated ✓ pushed to the tools</b>"
+        : `<button class="primary" onclick="api('POST','/api/live/validate')">Validate</button>`}
+        <small>Decision #${c.decision_id} · nothing happens until a person clicks.</small></div></div>`;
+  }
+  $("l-antic").innerHTML = s.anticipations.length ? s.anticipations.map((a, i) => `<div class="antic"><b>${esc(a.need)}</b>
+      <div class="meta">from: ${(a.from || []).map(x => `<span class="cite ${String(x).startsWith("X-") ? "ctx" : ""}">${esc(x)}</span>`).join("")} · not stored</div>
+      ${a.ask ? `<button onclick="api('POST','/api/live/ask/${i}')">Ask Claire: “${esc(a.ask)}”</button>` : ""}</div>`).join("")
+    : '<p class="empty">Nothing to anticipate from what she declared.</p>';
+  $("l-log").innerHTML = s.log.slice().reverse().map(e => `<div class="fc ${["refuse", "forget"].includes(e.kind) ? "info" : "plan"}">
+      <span class="t">${esc(e.at)}</span><b>${esc(e.kind)}</b> ${esc(e.text)}</div>`).join("");
+
+  $("l-mem").innerHTML = s.memory.length ? `<table><thead><tr><th>Claim</th><th>Origin · source</th><th>Purpose</th><th>Kept until</th></tr></thead><tbody>${
+    s.memory.map(r => `<tr><td><span class="id">${esc(r.claim_id)}</span>${esc(r.statement)}</td>
+      <td>${esc(r.origin)}<br><span class="muted">${esc(r.source)}</span></td><td>${esc(r.purpose)}</td>
+      <td>${esc(r.kept_until)}${r.ttl_hours ? ` <span class="muted">(${r.ttl_hours} h)</span>` : ""}<br><span class="store ${r.store}">${r.store}</span></td></tr>`).join("")}</tbody></table>`
+    : '<p class="empty">Nothing. Anima keeps no memory of Claire.</p>';
+
+  const L = s.ledger;
+  $("l-ledger").innerHTML = `<h2 style="margin-top:16px">Data ledger · this decision</h2>
+    <h3>✅ Used</h3><ul>${L.used.map(u => `<li><span class="cite ${u.kind === "context" ? "ctx" : ""}">${esc(u.id)}</span>${esc(u.what)} <span class="muted">· ${esc(u.store)}</span></li>`).join("") || "<li class='muted'>nothing</li>"}</ul>
+    <h3>⏸ Kept, not used now</h3><ul>${L.kept_aside.map(k => `<li><span class="cite">${esc(k.id)}</span>${esc(k.why)}</li>`).join("") || "<li class='muted'>nothing</li>"}</ul>
+    <h3>⛔ Refused today (no guest id kept)</h3><ul>${L.refused.map(r => `<li>“${esc(r.attribute)}” · ${esc(r.origin)} · ${esc(r.source)}${r.count > 1 ? " ×" + r.count : ""}</li>`).join("") || "<li class='muted'>nothing</li>"}</ul>
+    <h3>🗑 Forgotten</h3><ul>${L.forgotten.map(f => `<li>${esc(f.at)} · ${esc(f.text)}</li>`).join("") || "<li class='muted'>nothing</li>"}</ul>
+    <h3>📤 Shared with each tool ${L.pushed ? "<span class='pill ok'>pushed</span>" : "<span class='muted'>(after validation)</span>"}</h3>
+    ${L.shared.map(t => `<div class="tool"><b>${esc(t.tool)}</b> gets <code>${esc(JSON.stringify(t.gets))}</code><br><span class="never">never: ${esc(t.never)}</span></div>`).join("")}`;
+}
+setMode(true);
+api("GET", "/api/live/state", null, true);
 
 const es = new EventSource("/api/stream");
 es.onmessage = e => {
