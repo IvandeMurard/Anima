@@ -122,7 +122,7 @@
 <body>
 <header>
   <div class="brand"><b>Anima</b><span>Maison Lumen · front office · 22 Oct</span></div>
-  <div class="modes"><button id="m-live" class="on">Try it</button><button id="m-tour">Guided tour</button></div>
+  <div class="modes"><button id="m-hotel" class="on">Hotel · front desk</button><button id="m-guest">Guest · Claire</button><button id="m-tour">Guided tour</button></div>
   <div class="controls">
     <span id="pg" class="pill">Postgres …</span>
     <span id="vk" class="pill">Valkey …</span>
@@ -137,46 +137,71 @@
     </select>
     <button id="go" class="primary">Replay the day</button>
     </span>
-    <button id="l-start" class="primary live-only">Start a new day</button>
+    <span class="pill live-only" id="clockpill">Hotel time …</span>
   </div>
 </header>
 <div class="strip live-only">
-  <span><b>Live</b> · your messages are read by Claude, checked by the memory rules, planned by the reference planner</span>
-  <span>Guests are <b>synthetic</b> · don't type real personal data</span>
-  <span>Memory and decisions: <b>live on Aiven Postgres + Valkey</b></span>
+  <span><b>Live</b> · one shared hotel: open the guest view on your phone and the hotel view on your laptop</span>
+  <span>Messages read by <b>Claude</b>, checked by the memory rules, planned by the planner, decided by a human</span>
+  <span>Guests are <b>synthetic</b> · don't type real personal data · memory live on <b>Aiven Postgres + Valkey</b></span>
 </div>
-<div class="metrics live-only" id="metrics"></div>
-<main class="live-only" id="live">
+<div class="metrics hotel-only" id="metrics"></div>
+
+<!-- B2C: the guest pushes her own data -->
+<main class="guest-only">
   <section>
-    <h2>WhatsApp · SYN-Claire Laurent (simulated)</h2>
-    <div class="chat" id="chat"><p class="empty">Press “Start a new day”.</p></div>
-    <div class="row"><input type="time" id="l-at" value="08:40" step="300" title="Hotel time">
-      <input type="text" id="l-msg" placeholder="Write as Claire…"><button class="primary" id="l-send">Send</button></div>
-    <div class="chips" id="chips-guest"></div>
-    <div class="lab">Booking.com reservation · special request field</div>
-    <div class="row"><input type="text" id="l-ota" placeholder="e.g. quiet room please, arriving early"><button id="l-ota-send">Import</button></div>
+    <h2>My booking · Maison Lumen</h2>
+    <div class="tool"><b>SYN-Claire Laurent</b> · 22-24 Oct · Classic double<br><span class="muted">Booked on Booking.com · ref R-G001 · arrival 15:00</span></div>
+    <div class="lab">Special requests (sent with the booking)</div>
+    <div class="row"><input type="text" id="l-ota" placeholder="e.g. quiet room please, I'll need a desk"><button class="primary" id="l-ota-send">Send</button></div>
     <div class="chips" id="chips-ota"></div>
-    <div class="lab">Housekeeping app</div>
-    <div class="row"><input type="text" id="l-hk" placeholder="e.g. 206 tap leaking, plumber at 3pm"><button id="l-hk-send">Report</button></div>
-    <div class="chips" id="chips-hk"></div>
-    <div class="lab">Bar / restaurant POS · a receipt on Claire's room</div>
-    <div class="row"><input type="text" id="l-pos" placeholder="e.g. oat milk latte ×3"><button id="l-pos-send">Post</button></div>
-    <div class="chips" id="chips-pos"></div>
-    <div class="lab">An outside AI agent pushes a guess about Claire</div>
-    <div class="row"><input type="text" id="l-out" placeholder="e.g. prefers high floors"><button id="l-out-send">Push</button></div>
+    <p class="footnote">Whatever you write here or on WhatsApp is all the hotel will remember about you, for the purpose you agreed to, until the date shown on the right.</p>
   </section>
   <section>
-    <h2>Recommendation · waits for a human</h2>
+    <h2>WhatsApp · Maison Lumen</h2>
+    <div class="chat" id="g-chat"></div>
+    <div class="row"><input type="text" id="l-msg" placeholder="Message the hotel…"><button class="primary" id="l-send">Send</button></div>
+    <div class="chips" id="chips-guest"></div>
+  </section>
+  <section>
+    <h2>What Maison Lumen keeps about me</h2>
+    <div id="g-mem"><p class="empty">—</p></div>
+    <button id="l-withdraw" style="margin-top:8px">Withdraw my consent: forget me now</button>
+    <p class="footnote">Never kept: guesses from other apps, what you order at the bar, anything you didn't say yourself.</p>
+  </section>
+</main>
+
+<!-- B2B: everything is pushed to the front desk -->
+<main class="hotel-only">
+  <section>
+    <h2>Inbox · pushed to the front desk</h2>
+    <div id="h-inbox" class="feed" style="margin-top:0"></div>
+    <details style="margin-top:14px"><summary><b>Simulate the hotel's systems</b> (they push data on their own in production)</summary>
+      <div class="lab">Hotel clock</div>
+      <div class="row"><input type="time" id="l-at" value="10:20" step="300" title="Hotel time"><span class="muted" style="align-self:center;font-size:12px">time the next report happens</span></div>
+      <div class="lab">Housekeeping app</div>
+      <div class="row"><input type="text" id="l-hk" placeholder="e.g. 206 tap leaking, plumber at 3pm"><button id="l-hk-send">Push</button></div>
+      <div class="chips" id="chips-hk"></div>
+      <div class="lab">Bar / restaurant POS · receipt on Claire's room</div>
+      <div class="row"><input type="text" id="l-pos" placeholder="e.g. oat milk latte ×3"><button id="l-pos-send">Push</button></div>
+      <div class="chips" id="chips-pos"></div>
+      <div class="lab">An outside AI agent pushes a guess about Claire</div>
+      <div class="row"><input type="text" id="l-out" placeholder="e.g. prefers high floors"><button id="l-out-send">Push</button></div>
+      <div class="lab">Demo</div>
+      <button id="l-reset">Reset the demo day</button>
+    </details>
+  </section>
+  <section>
+    <h2>Recommendation · waits for you</h2>
     <div id="l-card"><p class="empty">No recommendation yet.</p></div>
+    <div class="lab">Replies Anima drafted · you decide</div>
+    <div id="h-drafts"><p class="empty">None.</p></div>
     <div class="lab">Anima anticipates · asks, doesn't assume</div>
     <div id="l-antic"><p class="empty">Nothing yet.</p></div>
-    <div class="lab">Agent log</div>
-    <div id="l-log" class="feed"></div>
   </section>
   <section>
     <h2>What Anima knows about Claire</h2>
     <div id="l-mem"><p class="empty">—</p></div>
-    <button id="l-withdraw" style="margin-top:8px">Claire withdraws consent</button>
     <div class="ledger" id="l-ledger"></div>
   </section>
 </main>
@@ -332,13 +357,21 @@ function onChecks(f) {
 }
 
 // ------------------------------------------------------------------ live mode ("Try it")
-function setMode(live) {
+let mode = "hotel";
+function setMode(m) {
+  mode = m;
+  const live = m !== "tour";
   document.querySelectorAll(".live-only").forEach(e => e.classList.toggle("hidden", !live));
   document.querySelectorAll(".tour-only").forEach(e => e.classList.toggle("hidden", live));
-  $("m-live").classList.toggle("on", live); $("m-tour").classList.toggle("on", !live);
+  document.querySelectorAll(".hotel-only").forEach(e => e.classList.toggle("hidden", m !== "hotel"));
+  document.querySelectorAll(".guest-only").forEach(e => e.classList.toggle("hidden", m !== "guest"));
+  $("m-hotel").classList.toggle("on", m === "hotel"); $("m-guest").classList.toggle("on", m === "guest");
+  $("m-tour").classList.toggle("on", m === "tour");
+  try { history.replaceState(null, "", "#" + m); } catch (e) {}
 }
-$("m-live").onclick = () => { setMode(true); api("GET", "/api/live/state", null, true); };
-$("m-tour").onclick = () => setMode(false);
+$("m-hotel").onclick = () => { setMode("hotel"); api("GET", "/api/live/state", null, true); };
+$("m-guest").onclick = () => { setMode("guest"); api("GET", "/api/live/state", null, true); };
+$("m-tour").onclick = () => setMode("tour");
 
 const GUEST_EXAMPLES = [
   "hi! change of plans, I'm on the 9:04 TGV, should be there around 11:15. need to work right away",
@@ -356,7 +389,7 @@ const POS_EXAMPLES = ["oat milk latte ×3", "late-night club sandwich at 23:40"]
 const chipsFor = (el, list, input) => { $(el).innerHTML = list.map((t, i) => `<button data-i="${i}">${esc(t.slice(0, 42))}${t.length > 42 ? "…" : ""}</button>`).join("");
   $(el).querySelectorAll("button").forEach(b => b.onclick = () => { $(input).value = list[b.dataset.i]; }); };
 chipsFor("chips-ota", OTA_EXAMPLES, "l-ota"); chipsFor("chips-pos", POS_EXAMPLES, "l-pos");
-$("l-ota-send").onclick = () => { const t = $("l-ota").value.trim(); if (t) { api("POST", "/api/live/ota", {text: t, at: $("l-at").value}); $("l-ota").value = ""; } };
+$("l-ota-send").onclick = () => { const t = $("l-ota").value.trim(); if (t) { api("POST", "/api/live/ota", {text: t}); $("l-ota").value = ""; } };
 $("l-pos-send").onclick = () => { const t = $("l-pos").value.trim(); if (t) { api("POST", "/api/live/pos", {text: t}); $("l-pos").value = ""; } };
 
 async function api(method, url, body, quiet) {
@@ -369,8 +402,8 @@ async function api(method, url, body, quiet) {
   } catch (e) { if (!quiet) alert("Request failed"); }
   finally { document.body.classList.remove("busy"); }
 }
-$("l-start").onclick = () => api("POST", "/api/live/start");
-$("l-send").onclick = () => { const t = $("l-msg").value.trim(); if (t) { api("POST", "/api/live/guest", {text: t, at: $("l-at").value}); $("l-msg").value = ""; } };
+$("l-reset").onclick = () => { if (confirm("Reset the shared demo day for everyone?")) api("POST", "/api/live/start"); };
+$("l-send").onclick = () => { const t = $("l-msg").value.trim(); if (t) { api("POST", "/api/live/guest", {text: t}); $("l-msg").value = ""; } };
 $("l-msg").onkeydown = e => { if (e.key === "Enter") $("l-send").click(); };
 $("l-hk-send").onclick = () => { const t = $("l-hk").value.trim(); if (t) { api("POST", "/api/live/staff", {text: t, at: $("l-at").value}); $("l-hk").value = ""; } };
 $("l-out-send").onclick = () => { const t = $("l-out").value.trim(); if (t) { api("POST", "/api/live/outside", {text: t}); $("l-out").value = ""; } };
@@ -386,10 +419,28 @@ function renderLive(s) {
     ["Messages read by Claude", m.llm_calls], ["Median read time", m.llm_median_ms ? (m.llm_median_ms / 1000).toFixed(1) + " s" : "—"],
   ].map(([k, v]) => `<div class="metric"><b>${esc(v)}</b>${esc(k)}</div>`).join("");
 
-  $("chat").innerHTML = s.chat.map(b => `<div class="bubble ${b.who} ${b.draft ? "draft" : ""}">${esc(b.text)}
-    ${b.who === "guest" ? `<small>${esc(b.at)} · read by Claude as <code>${esc(JSON.stringify(b.parsed))}</code></small>` : ""}
-    ${b.draft ? `<small>${esc(b.at)} · drafted by Anima, sent only if staff approve</small>` : (b.who === "hotel" ? `<small>${esc(b.at)} · hotel</small>` : "")}</div>`).join("");
-  $("chat").scrollTop = $("chat").scrollHeight;
+  $("clockpill").textContent = "Hotel time " + s.now;
+  // guest view: only what the guest actually sees (drafts stay with the hotel until staff send them)
+  $("g-chat").innerHTML = s.chat.filter(b => !b.draft && !(b.who === "system" && b.text.startsWith("Booking.com"))).map(b =>
+    `<div class="bubble ${b.who}">${esc(b.text)}${b.at ? `<small>${esc(b.at)}</small>` : ""}</div>`).join("");
+  $("g-chat").scrollTop = $("g-chat").scrollHeight;
+  $("g-mem").innerHTML = s.memory.length ? `<table><thead><tr><th>What I told them</th><th>Used for</th><th>Kept until</th></tr></thead><tbody>${
+    s.memory.map(r => `<tr><td>${esc(r.statement)}<br><span class="muted">${esc(r.source)}</span></td><td>${esc(r.purpose)}</td>
+      <td>${esc(r.kept_until)}</td></tr>`).join("")}</tbody></table>` : '<p class="empty">Nothing. The hotel keeps no memory of you.</p>';
+
+  // hotel view: everything that was pushed to the front desk, newest first
+  const SRC = {guest: "WhatsApp · guest", system: "Booking.com request"};
+  const inbox = [
+    ...s.chat.filter(b => b.who === "guest" || (b.who === "system" && b.text.startsWith("Booking.com"))).map(b => ({at: b.at || "", src: SRC[b.who],
+      text: b.text.replace(/^Booking.com special request: /, ""), parsed: b.parsed})),
+    ...s.log.filter(e => ["context", "refuse", "forget", "write", "confirm", "human", "ask"].includes(e.kind)).map(e => ({at: e.at,
+      src: {context: "Hotel systems", refuse: "Refused", forget: "Forgotten", write: "Memory write", confirm: "Memory confirmed", human: "You", ask: "Asked the guest"}[e.kind], text: e.text})),
+  ].sort((a, b) => (b.at > a.at) - (b.at < a.at));
+  $("h-inbox").innerHTML = inbox.map(i => `<div class="fc ${["Refused", "Forgotten"].includes(i.src) ? "info" : "plan"}"><span class="t">${esc(i.at)}</span><b>${esc(i.src)}</b><br>${esc(i.text)}
+    ${i.parsed ? `<details><summary>read by Claude as</summary><pre>${esc(JSON.stringify(i.parsed, null, 1))}</pre></details>` : ""}</div>`).join("") || '<p class="empty">Nothing yet.</p>';
+  const drafts = s.chat.map((b, i) => ({...b, i})).filter(b => b.draft);
+  $("h-drafts").innerHTML = drafts.length ? drafts.map(d => `<div class="antic"><b>To Claire:</b> ${esc(d.text)}<br>
+    <button class="primary" onclick="api('POST','/api/live/send/${d.i}')">Send on WhatsApp</button></div>`).join("") : '<p class="empty">None.</p>';
 
   const c = s.card;
   if (c) {
@@ -408,8 +459,6 @@ function renderLive(s) {
       <div class="meta">from: ${(a.from || []).map(x => `<span class="cite ${String(x).startsWith("X-") ? "ctx" : ""}">${esc(x)}</span>`).join("")} · not stored</div>
       ${a.ask ? `<button onclick="api('POST','/api/live/ask/${i}')">Ask Claire: “${esc(a.ask)}”</button>` : ""}</div>`).join("")
     : '<p class="empty">Nothing to anticipate from what she declared.</p>';
-  $("l-log").innerHTML = s.log.slice().reverse().map(e => `<div class="fc ${["refuse", "forget"].includes(e.kind) ? "info" : "plan"}">
-      <span class="t">${esc(e.at)}</span><b>${esc(e.kind)}</b> ${esc(e.text)}</div>`).join("");
 
   $("l-mem").innerHTML = s.memory.length ? `<table><thead><tr><th>Claim</th><th>Origin · source</th><th>Purpose</th><th>Kept until</th></tr></thead><tbody>${
     s.memory.map(r => `<tr><td><span class="id">${esc(r.claim_id)}</span>${esc(r.statement)}</td>
@@ -429,8 +478,13 @@ function renderLive(s) {
     <table><thead><tr><th>Source</th><th>What it is</th><th>Anima's rule</th><th>Today</th></tr></thead><tbody>${
       L.sources.map(s => `<tr><td>${esc(s.source)}</td><td>${esc(s.kind)}</td><td>${esc(s.rule)}</td><td>${s.seen}</td></tr>`).join("")}</tbody></table>`;
 }
-setMode(true);
+setMode(["guest", "tour"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "hotel");
 api("GET", "/api/live/state", null, true);
+// the two views share one hotel: refresh quietly so what one side pushes appears on the other
+setInterval(async () => {
+  if (mode === "tour" || document.body.classList.contains("busy") || document.activeElement?.tagName === "INPUT") return;
+  try { const r = await fetch("/api/live/state"); if (r.ok) renderLive(await r.json()); } catch (e) {}
+}, 4000);
 
 const es = new EventSource("/api/stream");
 es.onmessage = e => {

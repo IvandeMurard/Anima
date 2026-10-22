@@ -139,12 +139,12 @@ def live_call(fn, *args):
     with LOCK:
         if RUN["running"]:
             raise HTTPException(409, "the guided tour is replaying; wait for it to finish")
-    if fn is not live.start and live.S["now"] is None:
-        raise HTTPException(409, "press Start first")
     with LIVE_LOCK:
         pg = psycopg.connect(os.environ["DATABASE_URL"])
         vk = valkey.from_url(os.environ["VALKEY_URL"])
         try:
+            if fn is not live.start and live.S["now"] is None:
+                live.start(pg, vk)                   # the hotel's day is already running: no "start" for users
             out = fn(pg, vk, *args)
             return json.loads(live.dumps(out if fn is not live.start else live.state(pg, vk)))
         except HTTPException:
@@ -206,6 +206,11 @@ def live_validate():
 @app.post("/api/live/withdraw")
 def live_withdraw():
     return live_call(live.withdraw)
+
+
+@app.post("/api/live/send/{index}")
+def live_send(index: int):
+    return live_call(live.send_draft, index)
 
 
 @app.post("/api/live/ask/{index}")

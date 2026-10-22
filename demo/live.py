@@ -86,9 +86,20 @@ def start(pg, vk):
     log("forget", f"{S['expired']} memory deleted: not confirmed for 36 months (content not kept)")
     RD.load_memory(pg, vk)
     O().place_all_arrivals(W, S["now"])
-    S["chat"].append({"who": "system", "text": "Simulated WhatsApp with SYN-Claire Laurent (synthetic guest). "
-                      "Type as Claire. Don't enter real personal data."})
-    return replan(pg, vk, "Day opens: PMS put Claire in 402 (street side)")
+    S["chat"].append({"who": "system", "text": "Simulated WhatsApp with Maison Lumen (synthetic guest SYN-Claire Laurent). "
+                      "Don't enter real personal data."})
+    replan(pg, vk, "Day opens: PMS put Claire in 402 (street side)")
+    set_time("08:30")                       # the morning has started: the PMS feed has already flowed in
+    return replan(pg, vk, "08:30: Claire arrives today at 15:00 (booking)")
+
+
+def send_draft(pg, vk, index: int):
+    """Staff approve a reply Anima drafted: only then does the guest receive it."""
+    if 0 <= index < len(S["chat"]) and S["chat"][index].get("draft"):
+        S["chat"][index]["draft"] = False
+        S["chat"][index]["sent"] = True
+        log("human", f"front desk sent the drafted reply to Claire: “{S['chat'][index]['text'][:60]}…”")
+    return state(pg, vk)
 
 
 def refuse(pg, attribute, origin, source):
@@ -303,7 +314,7 @@ def answer_anticipation(pg, vk, index: int):
     """The hotel asks the guest (a drafted WhatsApp question); nothing is stored until she answers."""
     if 0 <= index < len(S["anticipations"]):
         a = S["anticipations"][index]
-        S["chat"].append({"who": "hotel", "text": a["ask"], "at": hh(S["now"])})
+        S["chat"].append({"who": "hotel", "text": a["ask"], "at": hh(S["now"]), "sent": True})
         log("ask", f"asked instead of assuming: {a['ask']}")
     return state(pg, vk)
 
