@@ -62,3 +62,18 @@ Retention: `working` claims end at check-out; `semantic` claims last 36 months r
 - **Yes:** turn `raw_inputs` into structured events and *proposed* claims (tested against each `target`); write the explanation of each recommendation with citations; write the 2-sentence front-desk brief (text, or voice output).
 - **No:** decide on its own, or write to memory directly. Proposals go through the write rule (R2). The decision core stays deterministic; the LLM version must reach the same decisions as `replay.py`.
 - **Never:** process audio. No voice input (DPIA M-10). Voice output (TTS) only.
+
+## Web app + deploy (added)
+
+| Path | What it is |
+|---|---|
+| `app/main.py` | FastAPI: `POST /api/run` replays the day through the stores, `GET /api/state` (timeline, recommendations, memory), `POST /api/decisions/{id}/validate` (human click, R4), `GET /api/health`. |
+| `app/static/index.html` | Single page: timeline · recommendations with Validate · memory panel (Postgres + Valkey TTL) · refusals. |
+| `Dockerfile` | For Aiven Runtime. Listens on `$PORT` (default 8080, `EXPOSE 8080`). Needs `DATABASE_URL`, `VALKEY_URL`; `ANTHROPIC_API_KEY` turns on the LLM parser (else golden). |
+| `demo/llm_parser.py` | `PARSER=llm`: Claude (`claude-opus-5-5`) turns each raw input into strict JSON (structured outputs). Golden targets are never shown to the model. Measured locally: 90 % / 93 % / 97 % of fields over 3 runs (AC1). |
+| `scripts/dev_mac.sh` | Local sandbox on macOS (Homebrew Postgres 16 :5433 + Valkey :6380), then the app on http://localhost:8000. |
+
+```bash
+bash scripts/dev_mac.sh                      # macOS local
+docker build -t anima . && docker run -p 8080:8080 -e DATABASE_URL=... -e VALKEY_URL=... anima
+```

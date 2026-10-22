@@ -1,0 +1,7 @@
+.git
+.venv
+.sandbox
+__pycache__
+*.pyc
+.env
+eval/predictions.json

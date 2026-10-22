@@ -123,11 +123,22 @@ def log_decision(pg, now, gid, p):
 
 
 # ------------------------------------------------------------------ agent steps
-def parse(item: dict) -> dict:
-    """Step 1. PARSER=golden replays the golden target (recorded). Replace with the LLM call on the day."""
+def parser_context(open_offers: list[dict]) -> dict:
+    """What the agent already holds when an input arrives: guests with memory (from the stores) + open offers."""
+    guests = [{"guest_id": gid, "name": g["name"], "contact": g.get("contact"),
+               "memory": [{"key": c["key"], "layer": c["layer"], "statement": c["statement"]} for c in g["claims"]]}
+              for gid, g in O.G.items() if g["claims"]]
+    return {"day": DAY, "guests_with_memory": guests, "open_offers": open_offers}
+
+
+def parse(item: dict, context: dict) -> dict:
+    """Step 1. PARSER=golden replays the golden target (recorded); PARSER=llm calls Claude (demo/llm_parser.py)."""
     if PARSER == "golden":
         return dict(item["target"])
-    raise SystemExit("PARSER=llm is not wired yet: implement parse() with the LLM and strict JSON output")
+    if PARSER == "llm":
+        from llm_parser import parse_llm
+        return parse_llm(item, context)
+    raise SystemExit(f"unknown PARSER={PARSER!r} (golden | llm)")
 
 
 def card(title, lines, color=G_):
@@ -155,14 +166,16 @@ def main():
     print(f"{D}{vk.xlen(STREAM)} events on Valkey stream '{STREAM}' · Postgres {pg.info.server_version // 10000} · parser={PARSER}{X}")
 
     static = O.static_day()          # baseline computed on the morning's knowledge, like the oracle
-    predictions, last, refused_total = [], {}, 0
+    predictions, last, refused_total, open_offers = [], {}, 0, []
     W = O.W
     for _id, fields in vk.xread({STREAM: "0"}, count=100)[0][1]:
         ev = json.loads(fields[b"event"]); now_s = ev["at"]; now = O.mins(now_s); d = ev.get("detail", {})
         typ, ex = ev["type"], ev.get("expect", {})
         print(f"\n{B}{now_s}{X}  {ev['summary']}")
         for i, item in raw_by_seq.get(ev["seq"], []):
-            out = parse(item); predictions.append({"index": i, "output": out})
+            out = parse(item, parser_context(open_offers)); predictions.append({"index": i, "output": out})
+            if PARSER == "llm":
+                print(f"{D}  → parsed: {json.dumps(out, ensure_ascii=False)[:150]}{X}")
             shown = item["payload"] if isinstance(item["payload"], str) else json.dumps(item["payload"], ensure_ascii=False)
             print(f"{D}  ← {item['channel']}: {shown[:110]}{X}")
         W.advance(now)
@@ -245,6 +258,8 @@ def main():
         if "G007" in ex and typ in ("day_start", "back_in_service"):
             s = O.move_suggestion(W, "G007", now, O.mins("20:00"))
             log_decision(pg, at(now_s), "G007", {"room": s["room"], "ready_by": s.get("ready_by"), "cites": s["cites"]})
+            if s["room"]:
+                open_offers = [{"guest_id": "G007", "room": s["room"], "ready_by": s.get("ready_by")}]
             card("Malik Benali (302, street side)",
                  [f"suggest {s['room']} ready {s.get('ready_by')} before the 20:00 concert · because: {', '.join(sorted(s['cites']))}"
                   if s["room"] else "concert tonight on his side · watching, no move before 15:00"])

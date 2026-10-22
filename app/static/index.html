@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anima</title>
+<style>
+  :root { --bg:#f7f6f3; --fg:#1d1d1b; --muted:#6b6a66; --card:#fff; --line:#e4e2dc; --accent:#2f6f4f; --warn:#a2640c; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#151514; --fg:#ecebe7; --muted:#9c9a94; --card:#1f1f1d; --line:#33322f; --accent:#6fbf94; --warn:#e0a84a; } }
+  * { box-sizing:border-box } body { margin:0; font:14px/1.45 system-ui, sans-serif; background:var(--bg); color:var(--fg) }
+  header { display:flex; gap:12px; align-items:center; padding:14px 16px; border-bottom:1px solid var(--line); flex-wrap:wrap }
+  header h1 { font-size:18px; margin:0 } .tag { font-size:12px; color:var(--muted) }
+  button { font:inherit; padding:6px 12px; border-radius:6px; border:1px solid var(--line); background:var(--card); color:var(--fg); cursor:pointer }
+  button.primary { background:var(--accent); color:#fff; border-color:transparent }
+  main { display:grid; grid-template-columns: 1fr 1.3fr 1fr; gap:16px; padding:16px }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr } }
+  section h2 { font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:0 0 8px }
+  .item { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:8px }
+  .t { font-variant-numeric:tabular-nums; color:var(--muted); margin-right:6px } .sm { font-size:12px; color:var(--muted) }
+  .ok { color:var(--accent) } .flag { color:var(--warn) } pre { white-space:pre-wrap; font-size:12px; margin:0 }
+</style>
+</head>
+<body>
+<header>
+  <h1>Anima</h1><span class="tag">Guest memory · synthetic data · recorded scenario, live stores</span>
+  <span style="flex:1"></span>
+  <span id="health" class="sm"></span>
+  <button class="primary" id="run">Replay the day</button>
+</header>
+<main>
+  <section><h2>Timeline</h2><div id="events"></div></section>
+  <section><h2>Recommendations (human decides)</h2><div id="decisions"></div></section>
+  <section><h2>Memory</h2><div id="memory"></div><h2 style="margin-top:16px">Refused at the door</h2><div id="refusals"></div></section>
+</main>
+<section style="padding:0 16px 16px"><h2>Last run</h2><div class="item"><pre id="log">—</pre></div></section>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const hhmm = ts => ts ? String(ts).slice(11, 16) : "";
+
+async function health() {
+  try { const h = await (await fetch("/api/health")).json();
+    $("health").textContent = `Postgres ${h.postgres === "up" ? "✓" : "✗"} · Valkey ${h.valkey === "up" ? "✓" : "✗"}`;
+  } catch { $("health").textContent = "offline"; }
+}
+
+async function load() {
+  const s = await (await fetch("/api/state")).json();
+  $("events").innerHTML = s.events.map(e =>
+    `<div class="item"><span class="t">${hhmm(e.at)}</span><b>${esc(e.type)}</b> <span class="sm">${esc(e.source)}</span></div>`).join("") || '<p class="sm">No events yet. Replay the day.</p>';
+  $("decisions").innerHTML = s.decisions.map(d => `
+    <div class="item"><span class="t">${hhmm(d.at)}</span><b>${esc(d.name || d.guest_id)}</b> → room <b>${esc(d.room ?? "—")}</b>
+      ${d.ready_by ? `<span class="sm">ready ${esc(d.ready_by).slice(0,5)}</span>` : ""}
+      <div class="sm">because: ${esc((d.cites || []).join(", ") || "—")}${d.alternative ? " · alternative: " + esc(d.alternative) : ""}</div>
+      <div style="margin-top:6px">${d.validated_at
+        ? `<span class="ok">✓ validated by ${esc(d.validated_by)}</span>`
+        : `<button onclick="validate(${d.id})">Validate</button>`}</div></div>`).join("") || '<p class="sm">No recommendations yet.</p>';
+  const durable = s.claims.map(c => `<div class="item"><b>${esc(c.claim_id)}</b> ${esc(c.statement)}
+      <div class="sm">${esc(c.guest_id)} · Postgres · confirmed ${c.confirmations}× · expires ${esc(c.expires_at)}
+      ${c.needs_reconfirm ? '<span class="flag">· reconfirm</span>' : ""}</div></div>`).join("");
+  const stay = Object.entries(s.stay_memory).map(([k, v]) => v.claims.map(c =>
+      `<div class="item"><b>${esc(c.claim_id)}</b> ${esc(c.statement)}<div class="sm">Valkey ${esc(k)} · forgets in ${Math.round(v.ttl_s/3600)} h</div></div>`).join("")).join("");
+  $("memory").innerHTML = durable + stay || '<p class="sm">Empty.</p>';
+  $("refusals").innerHTML = s.refusals.map(r => `<div class="item">${esc(r.attribute)} <span class="sm">(${esc(r.origin)}, ${esc(r.source)}) ×${r.count} · no guest id</span></div>`).join("") || '<p class="sm">None.</p>';
+}
+
+async function validate(id) { await fetch(`/api/decisions/${id}/validate`, {method: "POST"}); load(); }
+
+$("run").onclick = async () => {
+  $("run").disabled = true; $("log").textContent = "Running…";
+  try { const r = await (await fetch("/api/run", {method: "POST"})).json(); $("log").textContent = r.output || r.detail; }
+  finally { $("run").disabled = false; load(); }
+};
+
+health(); load().catch(() => {});
+fetch("/api/run").then(r => r.json()).then(r => { if (r.output) $("log").textContent = r.output; });
+</script>
+</body>
+</html>
