@@ -1,6 +1,6 @@
 # Submission texts — ready to paste (do not submit without Ivan)
 
-> Drafted 22 Oct 2026 for the "Data-Centric Agents" challenge. Product numbers come from `eval/PARSER_REPORT.md` and `demo/run_demo.py`; research figures from `research/`, with their flags. Before pasting:
+> Drafted 22 Oct 2026 for the "Data-Centric Agents" challenge. Product numbers come from `eval/PARSER_REPORT.md` and `demo/run_demo.py`; research figures from `research/`, with their flags. Live latency measured on Aiven at 12:45. Held-out parser score from `eval/PARSER_REPORT.md` (13:02).
 
 ## Project name
 
@@ -17,9 +17,21 @@ Guest memory for hotel AI agents: keeps only what guests said, forgets on schedu
 Anima is a hotel agent whose behaviour is defined by its data: what a guest declared, for which purpose, until when, and what is happening in the hotel right now. Remove the data and it does nothing, which is the point.
 
 **What data the agent uses**
-- **Declared guest claims** ("asks for a quiet room", "arrives around 11:15", "works on arrival"), each with its origin (always `declared`), source (front-desk note, pre-arrival form, WhatsApp), the purpose the guest consented to, and an expiry. Inferred attributes are refused at write time.
+- **Declared guest claims** ("asks for a quiet room", "arrives around 11:15", "works on arrival"), each with its origin (always `declared`), source (her Booking.com special request, WhatsApp, front-desk note, pre-arrival form), the purpose the guest consented to, and an expiry. The guest pushes them herself, and on her own screen sees "What Maison Lumen keeps about me": what she said, used for what, until when.
 - **Live hotel context:** PMS webhooks (check-outs), housekeeping texts, maintenance tickets, rail status, local events. These move the plan; they are never stored as guest facts.
 - **Decisions:** every recommendation, the claim ids it cites, and who validated it, when.
+
+**Every source gets a rule** (shown on screen, with a count of what each source sent today):
+
+| Source | What it is | Anima's rule |
+|---|---|---|
+| Guest WhatsApp | declared by the guest | remember, with consent and an expiry |
+| Booking.com special request | declared by the guest | remember, with consent and an expiry |
+| PMS webhooks | hotel operations | use to plan, never stored about the guest |
+| Housekeeping / maintenance | live context | use to plan, never stored about the guest |
+| Rail status, local events | live context | use to plan; a train only if the guest declared it |
+| POS (bar, restaurant) | behaviour | never remembered; may only become a question |
+| Outside AI agents, reviews | guess | refused at the door, no guest id kept |
 
 **Where it lives (Aiven)**
 - **Aiven for PostgreSQL — durable memory and audit trail.** `claims` (declared only, enforced by a `CHECK` constraint), `consents` (one row per purpose), `decisions` (with `validated_by` / `validated_at`), `events`, and `refusals`, which has **no guest id column** by design. Durable memory expires by SQL: `expires_at` is computed as 36 months after the last confirmation, and a sweep deletes what has expired. Withdrawing consent deletes the guest's memory by cascade, in one transaction.
@@ -32,8 +44,12 @@ Anima is a hotel agent whose behaviour is defined by its data: what a guest decl
 3. A rule gate accepts or refuses each proposal: declared and consented → written to Postgres (durable) or Valkey (this stay); inferred → refused and counted, with no name attached.
 4. The agent reads only declared, consented, unexpired memory, calls the deterministic planner (room, housekeeping order, ready time), and the card shows its reasons as citations to claim ids and context sources.
 5. The front desk validates with one click; the decision is logged. Confirmations ("the courtyard side, perfect") strengthen a claim and restart its clock; contradictions keep the durable claim and flag it to reconfirm, instead of silently overwriting it.
-6. Each tool gets only what it needs: housekeeping receives "clean 206 first by 10:30", never why. A data ledger on every recommendation shows what was used, refused, forgotten, and shared with which tool.
-7. Anticipation is "ask, don't assume": the agent turns a declared need plus context into a question for the guest, and stores nothing until the guest confirms.
+6. **Each recipient gets only what it needs, and only after the click.** Housekeeping app: the room, "clean first" and the ready time, never who the guest is or why. PMS: the reservation and the room, never her words. Front-desk brief: the room and the claim ids behind it, never anything refused or expired. A data ledger on every recommendation shows what was used, kept aside, refused, forgotten, and shared with each recipient.
+7. **Anticipation is "ask, don't assume":** the agent turns a declared need plus context into a question for the guest ("Ask Claire"), and stores nothing until she confirms. A bar receipt becomes at most such a question, never a memory.
+8. **The guest hears only from a person:** Anima drafts replies, and a guest receives one only when the front desk clicks "Send on WhatsApp".
+9. **"Withdraw my consent: forget me now"** on the guest's screen deletes her memory in Postgres (cascade from her consents) and Valkey in the same request, and the plan re-runs without it.
+
+Each recommendation shows its **agent trace** with timings: read by Claude → write rule → stored → memory read from the stores → planner → anticipations → reply drafted → waiting for a human.
 
 **Forgetting is a feature of the data layer:** stay memory dies at check-out by Valkey TTL; durable memory expires after 36 months unconfirmed by SQL in Postgres; consent withdrawal deletes immediately.
 
@@ -44,12 +60,13 @@ Recorded scenario: one synthetic day at a 24-room hotel at 87 % occupancy, 07:00
 | What | Result |
 |---|---|
 | **Outcome vs a no-re-planning baseline** | The baseline remembers the guest's need but nobody re-plans: she waits **35 min** for a room found out of service at the desk. Anima: **0 min**, in a room ready 5 minutes before she arrives. Times she has to repeat a declared need: **3 → 0**. Computed by the oracle (`reference/replay.py`), not hand-written. |
-| **Parser accuracy** | Live model outputs on the 8 raw inputs of the day (29 scored fields): **97 %** on the first, untuned prompt (French inputs). After tuning the prompt on this scenario: 100 % on 3 consecutive French runs, and **29/29** on one run of the English rewording of the same messages. There is no held-out set, so read it as "works on our day", not a benchmark; 97 % is the honest figure for new messages. Structured fields (times, rooms, ids) were never wrong; misses were wording in free text. Target was ≥ 90 %. |
+| **Parser accuracy** | Live model outputs on the 8 raw inputs of the day (29 scored fields): **97 %** on the first, untuned prompt (French inputs). After tuning the prompt on this scenario: 100 % on 3 consecutive French runs, and **29/29** on one run of the English rewording of the same messages. Those runs say "works on our day", not a benchmark. **Held-out test** (messages the prompt was never tuned on): **100 % (47/47 fields on 10 new messages it was never tuned on, one run)**. Structured fields (times, rooms, ids) were never wrong; misses were wording in free text. Target was ≥ 90 %. |
 | **Cost** | ≈ **$0.009 per message** (≈ $0.074 for the day's 8 messages). The planner is deterministic code. |
-| **Latency** | ≈ **1.5 s** median per message; the 8 messages of the day parse in 14-17 s. The first call after a deploy is slower (up to ~11 s while the output schema compiles), so we send one warm-up message. |
+| **Latency, live on Aiven** (measured 12:45) | **~2.4 s** per guest or staff message read by Claude. **~0.9 s** for actions without the LLM (such as validate, send, withdraw). The first Claude read after a deploy takes **~12 s** (cold), so we send one warm-up message. Offline eval: 1.5 s median for the parse alone. |
+| **Two views, one live hotel** | Guest view (phone) and front-desk view (laptop) share the same Postgres and Valkey and refresh every 4 s: what the guest pushes reaches the hotel's inbox, what the desk sends reaches the guest. |
 | **Decisions** | 11 of 11 scenario events match the oracle's expected decision (`reference/replay.py` prints `ALL PASS`). |
 | **Checks on the live stores** | 9/9 pass (`demo/run_demo.py`): stale claim deleted by the SQL expiry sweep; claim confirmed 3 times; contradicted claim kept and flagged; memory deleted by cascade on consent withdrawal; refusal log has no guest id column; decisions logged; only declared claims stored; baseline matches the oracle (35 min); this-stay memory expires by itself (Valkey TTL). |
-| **Trust guardrails** | **0** inferred attributes stored · **0** actions without a human click · consent withdrawal deletes in the same transaction. |
+| **Trust guardrails** (live counters) | **0** guesses stored · **0** actions without a human click. By design, a guest only receives replies a person sent, and consent withdrawal deletes from both stores in the same request. |
 
 What is live and what is recorded: the hotel, guests and day script are a recorded synthetic scenario; parsing, memory operations, expiry, refusals and decisions are live. No real guest data, phone numbers or hotel systems are involved.
 

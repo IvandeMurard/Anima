@@ -1,0 +1,165 @@
+{
+  "synthetic": true,
+  "about": "Held-out parser set, written 22 Oct 2026 13:05. Targets were fixed before any parser run and are not changed after. Not used to tune the prompt. `context.open_offers` is the planner state a live agent would hold when the input arrives; `target.note` is not scored.",
+  "inputs": [
+    {
+      "channel": "WhatsApp (guest)",
+      "format": "text",
+      "lang": "en",
+      "from": "+33 6 00 00 00 01 (SYN)",
+      "payload": "hi its me again, running late, train stuck outside dijon :( now more like 11:50. still need a quiet room pls not on the street side!!",
+      "target": {
+        "type": "guest_message",
+        "resolved_guest_id": "G001",
+        "eta": "11:50",
+        "train_departure": null,
+        "claims_to_write": ["eta"],
+        "already_known": ["quiet_room"],
+        "fallback_offered_by_guest": null,
+        "note": "hard case: restates a need already in memory (C001 quiet_room); must not be written again"
+      }
+    },
+    {
+      "channel": "WhatsApp (guest)",
+      "format": "text",
+      "lang": "en",
+      "from": "+33 6 00 00 00 01 (SYN)",
+      "payload": "update: missed the 9:04 grr, now on the 10:04, at hotel ~12:20. if room not ready no worries a sofa in the lobby is fine",
+      "target": {
+        "type": "guest_message",
+        "resolved_guest_id": "G001",
+        "eta": "12:20",
+        "train_departure": "10:04",
+        "claims_to_write": ["eta"],
+        "already_known": [],
+        "fallback_offered_by_guest": "sofa in lobby if room not ready",
+        "note": "the missed 9:04 is not the train taken; 'room not ready' is a fallback, not a restatement of ready_if_early"
+      }
+    },
+    {
+      "channel": "WhatsApp (guest)",
+      "format": "text",
+      "lang": "en",
+      "from": "+33 7 00 00 00 98 (SYN)",
+      "payload": "hiya, arriving tonight around 7.30pm, could we get a late checkout tmrw like 1pm? flight isnt till 6",
+      "target": {
+        "type": "guest_message",
+        "resolved_guest_id": null,
+        "eta": "19:30",
+        "train_departure": null,
+        "claims_to_write": ["eta", "late_check_out"],
+        "already_known": [],
+        "fallback_offered_by_guest": null,
+        "note": "unknown number; a flight is not a train"
+      }
+    },
+    {
+      "channel": "WhatsApp (guest)",
+      "format": "text",
+      "lang": "en",
+      "from": "+33 7 00 00 00 99 (SYN)",
+      "payload": "hello! booked for tonight, on the 17:46 from bordeaux, eta 20:15. pls a room on a high floor if poss, thanks",
+      "target": {
+        "type": "guest_message",
+        "resolved_guest_id": null,
+        "eta": "20:15",
+        "train_departure": "17:46",
+        "claims_to_write": ["eta", "high_floor"],
+        "already_known": [],
+        "fallback_offered_by_guest": null,
+        "note": "unknown number"
+      }
+    },
+    {
+      "channel": "WhatsApp (guest)",
+      "format": "text",
+      "lang": "en",
+      "from": "+33 6 00 00 00 01 (SYN)",
+      "payload": "thx for the offer but no need to move me, wont work from the room after all, all my meetings r at the client's office",
+      "context": {
+        "open_offers": [
+          {"guest_id": "G001", "room": "310", "offered_at": "11:20", "based_on_claims": ["needs_desk"]}
+        ]
+      },
+      "target": {
+        "type": "guest_reply",
+        "resolved_guest_id": "G001",
+        "declines_offer": "310",
+        "claims_to_write": [
+          {"key": "needs_desk", "value": false, "layer": "working", "scope": "this stay"}
+        ]
+      }
+    },
+    {
+      "channel": "housekeeping app (text message)",
+      "format": "text",
+      "lang": "en",
+      "payload": "toilet blocked in 115, tried the plunger no luck. blocking the room til maintenance comes",
+      "target": {
+        "type": "out_of_service",
+        "room": "115",
+        "reason": "blocked toilet",
+        "back_in_service": null
+      }
+    },
+    {
+      "channel": "housekeeping app (text message)",
+      "format": "text",
+      "lang": "en",
+      "payload": "115 ok again, plumber sorted it, cleaned n checked, can sell",
+      "target": {
+        "type": "back_in_service",
+        "room": "115"
+      }
+    },
+    {
+      "channel": "maintenance ticket",
+      "format": "json",
+      "payload": {
+        "ticket": "M-2210-11",
+        "room": "408",
+        "issue": "no hot water",
+        "priority": "high",
+        "status": "assigned",
+        "technician_slot": "14:30-15:00"
+      },
+      "target": {
+        "type": "out_of_service",
+        "room": "408",
+        "back_in_service": null,
+        "note": "hard case: the only time is a technician visit, not a back-in-service time"
+      }
+    },
+    {
+      "channel": "PMS webhook",
+      "format": "json",
+      "payload": {
+        "event_type": "CHECKOUT_EXPRESS",
+        "reservation": {"room": 118, "guest": "SYN-Guest G014"},
+        "expected_departure": "2026-10-22T08:40:00+02:00"
+      },
+      "target": {
+        "type": "express_check_out",
+        "room": "118",
+        "leaving_at": "08:40",
+        "note": "room arrives as an integer"
+      }
+    },
+    {
+      "channel": "rail status API (simulated)",
+      "format": "json",
+      "payload": {
+        "service": "TGV INOUI 6204",
+        "state": "ARRIVED",
+        "stop": "Paris Montparnasse",
+        "actual_arrival": "2026-10-22T12:47:00+02:00",
+        "delay_min": 12
+      },
+      "target": {
+        "type": "arrival_imminent",
+        "train": "TGV INOUI 6204",
+        "arrived": "12:47"
+      }
+    }
+  ]
+}

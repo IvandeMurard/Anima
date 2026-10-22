@@ -1,5 +1,31 @@
 # LLM parser report (AC1)
 
+## Held-out set, 22 Oct 13:02
+
+10 new synthetic inputs the prompt was never tuned on: `eval/heldout.json`. The set has 4 guest WhatsApp messages (2 from G001's number, 2 from unknown numbers), 1 guest reply to an open offer (the offer is given in the item's `context`), 2 housekeeping texts, 1 maintenance ticket JSON, 1 PMS webhook JSON with a different payload shape (room as an integer) and 1 rail status JSON with a different payload shape. The texts are messy English. All golden targets were written and saved before the first parser call and were not changed afterwards. Run: `python eval/run_heldout.py`. It calls `parse_llm(item, context)` with an explicit context: the guest directory from `data/guests.json`, no open offers from the recorded day, and only the item's own offers. It scores with the field rules of `eval/parse_eval.py` (it imports `norm`; matches must be exact after lowercasing; lists must match in order; `note` is not scored). `agent/parser.py` was unchanged (prompt v3). There was **one run**.
+
+| | Score |
+|---|---|
+| **Held-out, prompt v3 unchanged, one run** | **47/47 = 100 %** |
+
+- **Misses:** none. The two hard cases passed:
+  - Ticket `M-2210-11`: the only time given was a technician slot, `"technician_slot": "14:30-15:00"`. It returned `back_in_service: null`.
+  - G001 restated a need already in memory ("still need a quiet room pls not on the street side"). It returned `already_known: ["quiet_room"]` and `claims_to_write: ["eta"]` only, so the need was not written again.
+- **Other fields on new wording:**
+  - Free text matched exactly: `"sofa in lobby if room not ready"` and `"blocked toilet"`.
+  - New claim keys matched the targets: `late_check_out`, `high_floor`.
+  - A missed train was ignored: "missed the 9:04 … now on the 10:04" gave `10:04`.
+  - A flight was not taken for a train: `train_departure` was null.
+  - The integer room `118` came back as the string `"118"`.
+  - The reply declined offer 310 and proposed `needs_desk = false`, this stay.
+  - Extra key `reason: "no hot water"` on the ticket (not scored).
+- **Latency and cost:** median 1.9 s per input, max 8.9 s. 43,599 tokens in and 618 out, about **$0.093 for 10 inputs ($0.009 per input)**. Nearly all input tokens are the guest directory and the system prompt.
+- **Caveats:**
+  - Small set: 10 inputs, 47 fields, one run.
+  - I wrote the targets after reading the prompt, so they follow its conventions ("<fallback> if <condition>", adjective + noun reasons, `snake_case` keys). A guest phrasing far from those conventions, or a run with different key names (for example `cot` vs `baby_cot`), would show up as misses that this set does not test.
+  - Synthetic messages written by the team, not real hotel traffic.
+- **The honest sentence to say on stage:** "On 10 messy messages the parser had never seen, written and labelled before we ran it, it got 47 of 47 fields right in one run, about a cent per message. It's a small synthetic set, so read it as 'generalises beyond our demo script', not as a benchmark."
+
 ## English inputs, 22 Oct 12:15 (current dataset)
 
 At 12:15 the guest and staff messages were switched to English so judges can read them (ROADMAP decision log). The three free-text inputs were rewritten as messy English texting with the same facts: #1 WhatsApp ("taking the 9:04 TGV so ill be there around 11:15. gotta work as soon as i arrive, if the room isnt ready a quiet corner is fine :)"), #3 housekeeping text ("tap is leaking … plumber around 3pm, im blocking the room"), #7 guest-app reply ("thx but no need to change rooms, im going to the concert tonight, back around 1am"). No golden target changed: the English wording already matches "quiet corner if room not ready" and "leaking tap". `agent/parser.py` was **not** touched (prompt v3, as below).
